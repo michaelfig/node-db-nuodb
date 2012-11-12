@@ -23,6 +23,12 @@ export NUODB_LIB_DIR=/opt/nuodb/lib64
 node-waf configure && node-waf build
 ```
 
+If you opt to install Node.js on Mac using a .pkg file, you will need to build thusly:
+
+```bash
+sudo NUODB_LIB_DIR=/Users/rbuck/tmp/nuodb/lib64 NUODB_INCLUDE_DIR=/Users/rbuck/tmp/nuodb/include PATH=$PATH:/usr/local/bin npm install . -g
+```
+
 ## INSTALL ##
 
 Before proceeding with installation, you need to have NuoDB installed;
@@ -37,6 +43,7 @@ For example:
 $ export NUODB_INCLUDE_DIR=/opt/nuodb/include
 $ export NUODB_LIB_DIR=/opt/nuodb/lib64
 ```
+
 
 Once the environment variables are set, install with npm:
 
