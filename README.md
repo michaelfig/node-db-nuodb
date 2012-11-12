@@ -3,6 +3,13 @@
 For detailed information about this and other Node.js
 database bindings visit the [Node.js db-nuodb homepage] [homepage].
 
+## REQUIREMENTS
+
+It turns out that node-db does not support 0.8.* and later versions of Node.js. As such to build and test you must install an earlier version of
+Node.js. We suggest 0.6.9:
+
+http://nodejs.org/dist/v0.6.9/
+
 ## BUILDING ##
 
 ```bash
