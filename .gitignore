@@ -13,3 +13,10 @@ results
 
 node_modules
 npm-debug.log
+
+/build/*
+*.node
+*.sh
+*.swp
+.lock*
+.DS_Store

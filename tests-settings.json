@@ -1,0 +1,6 @@
+{ 
+    "host": "localhost",
+    "user": "cloud",
+    "password": "user",
+    "database": "flights"
+}
