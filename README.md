@@ -26,8 +26,11 @@ export NODE_PATH=/usr/local/bin/node
 export NUODB_INCLUDE_DIR=/opt/nuodb/include
 export NUODB_LIB_DIR=/opt/nuodb/lib64
 
-node-waf configure && node-waf build
+node-waf configure && node-waf clean build test
 ```
+
+In order to run tests you should start NuoDB using the settings specified in
+the test-settings.json file.
 
 If you opt to install Node.js on Mac using a .pkg file, you will need to build thusly:
 
@@ -49,7 +52,6 @@ For example:
 $ export NUODB_INCLUDE_DIR=/opt/nuodb/include
 $ export NUODB_LIB_DIR=/opt/nuodb/lib64
 ```
-
 
 Once the environment variables are set, install with npm:
 
