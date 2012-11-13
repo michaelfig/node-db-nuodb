@@ -57,12 +57,22 @@ git push origin :refs/tags/v1.0.0-rc.1
 
 ### PUBLISHING ###
 
+```bash
+npm publish
+```
 
 If you bugger it up, pull it back quickly, or cause grief for users:
 
 ```bash
 npm unpublish  db-nuodb@1.0.0-RC.1
 ```
+
+To view published versions:
+
+```bash
+npm view  db-nuodb
+```
+
 
 ## INSTALL ##
 
