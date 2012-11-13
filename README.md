@@ -38,6 +38,23 @@ If you opt to install Node.js on Mac using a .pkg file, you will need to build t
 sudo NUODB_LIB_DIR=/Users/rbuck/tmp/nuodb/lib64 NUODB_INCLUDE_DIR=/Users/rbuck/tmp/nuodb/include PATH=$PATH:/usr/local/bin npm install . -g
 ```
 
+## RELEASE PROCEDURE ##
+
+### TAGGING ###
+
+Tag the product using tags per the SemVer specification; our tags have a v-prefix:
+
+```bash
+git tag -a v1.0.0-rc.1 -m "SemVer Version: v1.0.0-rc.1"
+```
+
+If you make a mistake, take it back quickly:
+
+```bash
+git tag -d v1.0.0-rc.1
+git push origin :refs/tags/v1.0.0-rc.1
+```
+
 ## INSTALL ##
 
 Before proceeding with installation, you need to have NuoDB installed;
