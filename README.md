@@ -55,6 +55,15 @@ git tag -d v1.0.0-rc.1
 git push origin :refs/tags/v1.0.0-rc.1
 ```
 
+### PUBLISHING ###
+
+
+If you bugger it up, pull it back quickly, or cause grief for users:
+
+```bash
+npm unpublish  db-nuodb@1.0.0-RC.1
+```
+
 ## INSTALL ##
 
 Before proceeding with installation, you need to have NuoDB installed;
