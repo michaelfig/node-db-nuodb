@@ -20,3 +20,4 @@ npm-debug.log
 *.swp
 .lock*
 .DS_Store
+.idea/
