@@ -3,7 +3,7 @@
 var settings = JSON.parse(require('fs').readFileSync('./tests-settings.json','utf8'));
 
 var client = require("./db-nuodb");
-var tests = require("./lib/node-db/tests.js").get(function() {
+var tests = require("./lib/node-db/tests.js").get(function(callback) {
     new client.Database(settings).connect(function(err) {
         if (err) {
             throw new Error('Could not connect to test DB');

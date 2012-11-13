@@ -10,6 +10,12 @@ Node.js. We suggest 0.6.9:
 
 [Node.js 0.6.9] [node.js v0.6.9]
 
+Make sure to install nodeunit globally:
+
+```bash
+npm install nodeunit -g
+```
+
 ## BUILDING ##
 
 ```bash

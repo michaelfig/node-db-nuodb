@@ -70,16 +70,10 @@ node_db::Result::Column::type_t node_db_nuodb::Result::Column::getType() const {
 }
 
 node_db_nuodb::Result::Result(NuoDB::ResultSet * results, int affectedRows) throw(node_db::Exception&)
-    : columns(NULL),
-    totalColumns(0),
-    rowNumber(0),
-    affectedRows(affectedRows),
-    empty(true),
-    resultSet(results),
-    previousColumnLengths(NULL),
-    previousRow(NULL),
-    nextColumnLengths(NULL),
-    nextRow(NULL) {
+    : columns(NULL), totalColumns(0), rowNumber(0), empty(true), resultSet(results),
+    previousColumnLengths(NULL), nextColumnLengths(NULL), previousRow(NULL), nextRow(NULL), affectedRows(affectedRows)
+{
+
     if(results) {
         // if there is a NuoDB::ResultSet, the statement was performed by executeQuery, this->resultSet is available.
         // node-db will take the result as scalar by returning affectedRecords.
@@ -112,7 +106,7 @@ node_db_nuodb::Result::Result(NuoDB::ResultSet * results, int affectedRows) thro
             }
 
             this->nextRow = this->row(this->nextColumnLengths);
-        } catch(...) {
+        } catch (...) {
             this->free();
             throw;
         }
@@ -161,7 +155,6 @@ void node_db_nuodb::Result::freeRow(char** row) throw() {
         for (uint16_t i = 0; i < this->totalColumns; i++) {
             delete [] row[i];
         }
-
         delete [] row;
     }
 }
@@ -242,7 +235,7 @@ char** node_db_nuodb::Result::row(unsigned long* rowColumnLengths) throw(node_db
 
             memcpy(row[c], string.c_str(), rowColumnLengths[c]);
         }
-    } catch(...) {
+    } catch (...) {
         if (row != NULL) {
             for (uint16_t i=0; i < c; i++) {
                 if (row[i] != NULL) {

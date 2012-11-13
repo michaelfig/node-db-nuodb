@@ -61,10 +61,10 @@ void node_db_nuodb::Connection::open() throw(node_db::Exception&) {
     try {
         NuoDB::Connection * connection = NuoDB::Connection::create();
         NuoDB::Properties * props = connection->allocProperties();
+        props->putValue("host", this->hostname.c_str());
         props->putValue("user", this->user.c_str());
         props->putValue("password", this->password.c_str());
         props->putValue("schema", this->schema.c_str());
-        //TODO: Missing properties: Hostname and Port
 
         connection->openDatabase(this->database.c_str(), props);
         handle = reinterpret_cast<uintptr_t>(connection);

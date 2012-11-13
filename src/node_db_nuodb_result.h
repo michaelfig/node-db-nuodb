@@ -83,8 +83,8 @@ class Result : public node_db::Result {
     private:
         NuoDB::ResultSet * resultSet;
         unsigned long* previousColumnLengths;
-        char** previousRow;
         unsigned long* nextColumnLengths;
+        char** previousRow;
         char** nextRow;
         uint64_t affectedRows;
 

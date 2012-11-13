@@ -31,7 +31,6 @@ def configure(ctx):
       ctx.env.append_unique('CXXFLAGS', ['-Weffc++', '-Wfloat-equal',
         '-Wextra', '-Wswitch-enum', '-Wconversion'])
 
-
   nuodb_include = environ.get("NUODB_INCLUDE_DIR", "/opt/local/nuodb/include")
   if nuodb_include:
     ctx.env.append_unique('CXXFLAGS', [ '-I' + nuodb_include ])
@@ -48,11 +47,19 @@ def build(ctx):
   obj.target = "nuodb_bindings"
   obj.source = "lib/node-db/binding.cc lib/node-db/connection.cc lib/node-db/events.cc lib/node-db/exception.cc lib/node-db/query.cc lib/node-db/result.cc src/node_db_nuodb_bindings.cc src/node_db_nuodb.cc src/node_db_nuodb_connection.cc src/node_db_nuodb_query.cc src/node_db_nuodb_result.cc"
   obj.includes = "lib/"
-  obj.rpath = ['.', 'lib', 'lib64'] 
+  nuodb_lib = environ.get("NUODB_LIB_DIR", "/opt/local/nuodb/lib64")
+  obj.rpath = [nuodb_lib] 
+
+def lint(lnt):
+  # Bindings C++ source code
+  print("Run CPPLint:")
+  Utils.exec_command('cpplint --filter=-whitespace/line_length ./lib/node-db/*.h ./lib/node-db/*.cc ./src/*.h ./src/*.cc')
+  # Bindings javascript code, and tools
+  print("Run Nodelint for sources:")
+  Utils.exec_command('nodelint ./package.json ./db-nuodb.js')
 
 def test(ctx):
   test_binary = 'nodeunit'
   if Options.options.debug:
     test_binary = 'nodeunit_g'
-  
   Utils.exec_command(test_binary + ' tests.js')
