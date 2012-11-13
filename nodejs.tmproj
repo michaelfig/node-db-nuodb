@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>wscript</string>
+	<string>README.md</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -21,7 +21,9 @@
 					<key>filename</key>
 					<string>README.md</string>
 					<key>lastUsed</key>
-					<date>2012-03-28T20:08:52Z</date>
+					<date>2012-11-12T12:48:14Z</date>
+					<key>selected</key>
+					<true/>
 				</dict>
 				<dict>
 					<key>filename</key>
@@ -81,9 +83,7 @@
 					<key>filename</key>
 					<string>wscript</string>
 					<key>lastUsed</key>
-					<date>2012-10-11T13:42:10Z</date>
-					<key>selected</key>
-					<true/>
+					<date>2012-11-12T12:48:12Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
@@ -108,28 +108,28 @@
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
-		<key>wscript</key>
+		<key>README.md</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>197</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>48</integer>
+				<integer>0</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
-			<integer>70</integer>
+			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>12</integer>
+			<integer>0</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>wscript</string>
+		<string>README.md</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{210, 63}, {1710, 995}}</string>
+	<string>{{203, 56}, {1467, 972}}</string>
 </dict>
 </plist>
