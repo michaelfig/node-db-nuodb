@@ -1,74 +1,226 @@
 <!DOCTYPE html>
 <html>
 
-  <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Node-db-nuodb : NuoDB database bindings for Node.js" />
+<head>
+  <meta charset='utf-8'/>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+  <meta name="description" content="db-nuodb : NuoDB database bindings for Node.js"/>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+  <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Node-db-nuodb</title>
-  </head>
+  <title>db-nuodb</title>
+</head>
 
-  <body>
+<body>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/nuodb/node-db-nuodb">View on GitHub</a>
+<!-- HEADER -->
+<div id="header_wrap" class="outer">
+  <header class="inner">
+    <a id="forkme_banner" href="https://github.com/nuodb/node-db-nuodb">View on GitHub</a>
 
-          <h1 id="project_title">Node-db-nuodb</h1>
-          <h2 id="project_tagline">NuoDB database bindings for Node.js</h2>
+    <h1 id="project_title">db-nuodb</h1>
 
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/nuodb/node-db-nuodb/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/nuodb/node-db-nuodb/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
+    <h2 id="project_tagline">NuoDB database bindings for Node.js</h2>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>Welcome to GitHub Pages.</h3>
+    <section id="downloads">
+      <a class="zip_download_link" href="https://github.com/nuodb/node-db-nuodb/zipball/master">Download this project as
+        a .zip file</a>
+      <a class="tar_download_link" href="https://github.com/nuodb/node-db-nuodb/tarball/master">Download this project as
+        a tar.gz file</a>
+    </section>
+  </header>
+</div>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<!-- MAIN CONTENT -->
+<div id="main_content_wrap" class="outer">
+  <section id="main_content" class="inner">
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+    <h3>Welcome to the db-nuodb Project</h3>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+    <p>This project provides a Node.js database driver for the NuoDB database.</p>
 
-<h3>Designer Templates</h3>
+    <h3>Install</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+    <p>Before proceeding with installation, make sure you have NuoDB installed on your system.
+      Specifically, you should have access to the libNuoRemote binary. Make sure you specify
+      the NUODB_ROOT environment variable:</p>
 
-<h3>Rather Drive Stick?</h3>
+    <pre><code>$ export NUODB_ROOT=/usr/local/nuodb</code></pre>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+    <p>Once you have mysql_config in your path or the MYSQL_CONFIG environment variable set,
+      you can go ahead with the installation:</p>
 
-<h3>Authors and Contributors</h3>
+    <pre><code>$ npm install db-nuodb</code></pre>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+    <h3>Connecting</h3>
 
-<h3>Support or Contact</h3>
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).on('error', function(error) {
+        console.log('ERROR: ' + error);
+    }).on('ready', function(server) {
+        console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
+    }).connect();</code></pre>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-    </div>
+    <h3>Querying</h3>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Node-db-nuodb maintained by <a href="https://github.com/nuodb">nuodb</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log('CONNECTION error: ' + error);
+        }
+        this.query().
+            select('*').
+            from('users').
+            where('approved = ?', [ true ]).
+            order({'created': false}).
+            execute(function(error, rows, cols) {
+                    if (error) {
+                            console.log('ERROR: ' + error);
+                            return;
+                    }
+                    console.log(rows.length + ' ROWS found');
+            });
+    });</code></pre>
 
-    
+    <h3>Using Manual Queries</h3>
 
-  </body>
+    <p>In the example below, usage of <a href="http://nodejsdb.org/docs#database_name">Database.name()</a>
+      and <a href="http://nodejsdb.org/docs#database_escape">Database.escape()</a> is not mandatory,
+      but recommended.</p>
+
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log('CONNECTION error: ' + error);
+        }
+        this.query('SELECT * FROM ' + this.name('users') + ' WHERE ' + this.name('name') + ' LIKE \'' + this.escape('%John%') + '\'').
+            execute(function(error, rows, cols) {
+                    if (error) {
+                            console.log('ERROR: ' + error);
+                            return;
+                    }
+                    console.log(rows.length + ' ROWS found');
+            });
+    });</code></pre>
+
+    <h3>Inserting</h3>
+
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log('CONNECTION error: ' + error);
+        }
+        this.query().
+            insert('users',
+                ['name', 'created', 'role', 'approved'],
+                ['Test User', {value: 'NOW', escape: false}, 'user', true]
+            ).
+            execute(function(error, result) {
+                    if (error) {
+                            console.log('ERROR: ' + error);
+                            return;
+                    }
+                    console.log('GENERATED id: ' + result.id);
+            });
+    });</code></pre>
+
+    <h3>Updating</h3>
+
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log('CONNECTION error: ' + error);
+        }
+        this.query().
+            update('users').
+            set({ 'name': 'New Name' }).
+            where('id = ?', [ 1 ])
+            execute(function(error, result) {
+                    if (error) {
+                            console.log('ERROR: ' + error);
+                            return;
+                    }
+                    console.log('RESULT: ', result);
+            });
+    });</code></pre>
+
+    <h3>Deleting</h3>
+
+    <pre><code>var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'user',
+        password: 'password',
+        database: 'test',
+        schema: 'test'
+    }).connect(function(error) {
+        if (error) {
+            return console.log('CONNECTION error: ' + error);
+        }
+        this.query().
+            delete().
+            from('users')
+            where('id = ?', [ 1 ])
+            execute(function(error, result) {
+                    if (error) {
+                            console.log('ERROR: ' + error);
+                            return;
+                    }
+                    console.log('RESULT: ', result);
+            });
+    });</code></pre>
+
+    <h3>Documentation</h3>
+
+    <p>For more in depth documentation check <a href="http://nodejsdb.org/docs">node-db’s documentation</a>.</p>
+
+    <h3>Authors and Contributors</h3>
+
+    <p>Robert Buck (<a href="https://github.com/rbuck" class="user-mention">@rbuck</a>).</p>
+
+    <h3>Support or Contact</h3>
+
+    <p>You can report bugs on the <a href="https://github.com/nuodb/node-db-nuodb/issues">project issues page</a>.</p>
+  </section>
+</div>
+
+<!-- FOOTER  -->
+<div id="footer_wrap" class="outer">
+  <footer class="inner">
+    <p class="copyright">db-nuodb Copyright (c) 2012 by <a href="https://www.nuodb.com/">NuoDB, Inc.</a></p>
+  </footer>
+</div>
+
+
+</body>
 </html>
