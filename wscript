@@ -4,7 +4,7 @@ import os
 import Options, Utils
 from os import environ
 
-VERSION = "0.1.0"
+VERSION = "1.0.0-rc.2"
 srcdir = "."
 blddir = "build"
 
