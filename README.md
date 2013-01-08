@@ -45,14 +45,14 @@ sudo NUODB_LIB_DIR=/Users/rbuck/tmp/nuodb/lib64 NUODB_INCLUDE_DIR=/Users/rbuck/t
 Tag the product using tags per the SemVer specification; our tags have a v-prefix:
 
 ```bash
-git tag -a v1.0.0-rc.2 -m "SemVer Version: v1.0.0-rc.2"
+git tag -a v1.0.0 -m "SemVer Version: v1.0.0"
 ```
 
 If you make a mistake, take it back quickly:
 
 ```bash
-git tag -d v1.0.0-rc.2
-git push origin :refs/tags/v1.0.0-rc.2
+git tag -d v1.0.0
+git push origin :refs/tags/v1.0.0
 ```
 
 ### PUBLISHING ###
@@ -64,7 +64,7 @@ npm publish
 If you bugger it up, pull it back quickly, or cause grief for users:
 
 ```bash
-npm unpublish  db-nuodb@1.0.0-rc.2
+npm unpublish  db-nuodb@1.0.0
 ```
 
 To view published versions:
