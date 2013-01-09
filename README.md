@@ -30,7 +30,8 @@ node-waf configure && node-waf clean build test
 ```
 
 In order to run tests you should start NuoDB using the settings specified in
-the test-settings.json file.
+the test-settings.json file. This can be done simply via the quickstart script
+in rhe NuoDB distribution.
 
 If you opt to install Node.js on Mac using a .pkg file, you will need to build thusly:
 
