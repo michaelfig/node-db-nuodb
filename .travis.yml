@@ -5,6 +5,7 @@ node_js:
 
 env:
   - NUODB_ROOT=/opt/nuodb
+  - NODE_PATH=`which node`
 
 notifications:
   recipients:
