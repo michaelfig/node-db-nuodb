@@ -4,7 +4,6 @@ node_js:
   - 0.6
 
 env:
-  - NODE_PATH=`which node`
   - NUODB_ROOT=/opt/nuodb
   - NUODB_INCLUDE_DIR=/opt/nuodb/include
   - NUODB_LIB_DIR=/opt/nuodb/lib64
@@ -15,6 +14,7 @@ notifications:
     - rbuck@nuodb.com
 
 before_install:
+  - which node
   - wget http://www.nuodb.com/latest/nuodb-1.0-GA.linux.x86_64.deb --output-document=/var/tmp/nuodb.deb
   - sudo dpkg -i /var/tmp/nuodb.deb
 
