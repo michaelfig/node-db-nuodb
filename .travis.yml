@@ -4,9 +4,7 @@ node_js:
   - 0.6
 
 env:
-  - NUODB_ROOT=/opt/nuodb
-  - NUODB_INCLUDE_DIR=/opt/nuodb/include
-  - NUODB_LIB_DIR=/opt/nuodb/lib64
+  - NUODB_ROOT=/opt/nuodb NUODB_INCLUDE_DIR=/opt/nuodb/include NUODB_LIB_DIR=/opt/nuodb/lib64
 
 notifications:
   recipients:
