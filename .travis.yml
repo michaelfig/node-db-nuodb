@@ -12,11 +12,15 @@ notifications:
     - rbuck@nuodb.com
 
 before_script:
-  - wget http://www.nuodb.com/latest/nuodb-1.0-GA.linux.x86_64.deb --output-document=/var/tmp/nuodb.deb
-  - sudo dpkg -i /var/tmp/nuodb.deb
+  - '`which node`'
+  - 'wget http://www.nuodb.com/latest/nuodb-1.0-GA.linux.x86_64.deb --output-document=/var/tmp/nuodb.deb'
+  - 'sudo dpkg -i /var/tmp/nuodb.deb'
+  - 'java -jar ${NUODB_ROOT}/jar/nuoagent.jar --broker &'
+  - '${NUODB_ROOT}/bin/nuodb --chorus test --password bar --dba-user dba --dba-password goalie --verbose debug --archive /var/tmp/nuodb --initialize --force &'
+  - '${NUODB_ROOT}/bin/nuodb --chorus test --password bar --dba-user dba --dba-password goalie &'
 
 script:
-  - NUODB_ROOT=/opt/nuodb npm test
+  - 'node-waf configure && node-waf clean build test'
 
 after_script:
-  - sudo dpkg -r nuodb
+  - 'sudo dpkg -r nuodb'
