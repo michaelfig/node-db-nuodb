@@ -1,5 +1,7 @@
 # node-db-nuodb: NuoDB database bindings for Node.js #
 
+[![Build Status](https://travis-ci.org/nuodb/node-db-nuodb.png?branch=master)](http://travis-ci.org/nuodb/node-db-nuodb)
+
 For detailed information about this and other Node.js
 database bindings visit the [Node.js db-nuodb homepage] [homepage].
 
