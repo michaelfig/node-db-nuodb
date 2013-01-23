@@ -34,12 +34,12 @@ def configure(ctx):
   nuodb_include = environ.get("NUODB_INCLUDE_DIR", "/opt/local/nuodb/include")
   if nuodb_include:
     ctx.env.append_unique('CXXFLAGS', [ '-I' + nuodb_include ])
-  ctx.check(header_name="Connection.h", errmsg="Missing include files for NuoDB", mandatory=True)
+  ctx.check(header_name="Connection.h", errmsg="not found; please set NUODB_INCLUDE_DIR", mandatory=True)
 
   nuodb_lib = environ.get("NUODB_LIB_DIR", "/opt/local/nuodb/lib64")
   if nuodb_lib:
     ctx.env.append_unique('LINKFLAGS', [ '-L' + nuodb_lib ])
-  ctx.check_cxx(lib="NuoRemote", errmsg="Missing libNuoRemote", mandatory=True)
+  ctx.check_cxx(lib="NuoRemote", errmsg="not found; please set NUODB_LIB_DIR", mandatory=True)
   ctx.env.append_unique('LINKFLAGS', ['-lNuoRemote'])
 
 def build(ctx):
