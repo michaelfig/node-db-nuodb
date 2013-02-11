@@ -3,7 +3,7 @@
 [![Build Status](https://api.travis-ci.org/nuodb/node-db-nuodb.png?branch=master)](http://travis-ci.org/nuodb/node-db-nuodb)
 
 For detailed information about this and other Node.js
-database bindings visit the [Node.js db-nuodb homepage] [homepage].
+database bindings visit the [Node.js db-nuodb homepage] [nodedbhomepage].
 
 ## REQUIREMENTS
 
@@ -152,3 +152,4 @@ This module is released under the [NUODB License] [license].
 [homepage]: https://github.com/nuodb/nuodb-drivers/tree/master/nodejs
 [license]: https://github.com/nuodb/nuodb-drivers/blob/master/LICENSE
 [node.js v0.6.9]: http://nodejs.org/dist/v0.6.9/
+[nodedbhomepage]: http://nodejsdb.org/
