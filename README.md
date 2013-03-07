@@ -140,6 +140,28 @@ new nuodb.Database({
 });
 ```
 
+## HOW TO CHANGE SUBMODULE URL ##
+
+In the following procedure, remove the existing entries found in the first two
+files mentioned below. Save and exit from VI in both circumstances. Doctor the
+following instructions to suit.
+
+```bash
+
+	vi .gitmodules 
+	vi .git/config 
+	git rm --cached lib/node-db
+	rm -rf lib/node-db/
+	rm -fr .git/modules/lib/node-db/
+	git status
+	git add -u
+	git status
+	git commit -m "Remove prior submodule."
+	rm -fr *
+	git reset --hard
+	git submodule add git://github.com/lbayas/node-db.git lib/node-db
+```
+
 ## LICENSE ##
 
 This module is released under the [NUODB License] [license].
