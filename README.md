@@ -147,23 +147,22 @@ files mentioned below. Save and exit from VI in both circumstances. Doctor the
 following instructions to suit.
 
 ```bash
-
-	vi .gitmodules 
-	vi .git/config 
-	git rm --cached lib/node-db
-	rm -rf lib/node-db/
-	rm -fr .git/modules/lib/node-db/
-	git status
-	git add -u
-	git status
-	git commit -m "Remove prior submodule."
-	rm -fr *
-	git reset --hard
-	git submodule add git://github.com/lbayas/node-db.git lib/node-db
-  git add -u
-  git status
-  git commit -m "Repointed successfully to lbayas fork. Bumped version number."
-	git push
+vi .gitmodules 
+vi .git/config 
+git rm --cached lib/node-db
+rm -rf lib/node-db/
+rm -fr .git/modules/lib/node-db/
+git status
+git add -u
+git status
+git commit -m "Remove prior submodule."
+rm -fr *
+git reset --hard
+git submodule add git://github.com/lbayas/node-db.git lib/node-db
+git add -u
+git status
+git commit -m "Repointed successfully to lbayas fork. Bumped version number."
+git push
 ```
 
 ## LICENSE ##
