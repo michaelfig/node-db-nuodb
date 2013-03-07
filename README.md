@@ -26,6 +26,16 @@ export NUODB_LIB_DIR=${NUODB_ROOT}/lib64
 node-waf configure && node-waf clean build test
 ```
 
+## TESTING ##
+
+Start up a minimal chorus in order to run the tests:
+
+```bash
+java -jar ${NUODB_ROOT}/jar/nuoagent.jar --broker &
+${NUODB_ROOT}/bin/nuodb --chorus test --password bar --dba-user dba --dba-password user --verbose debug --archive /var/tmp/nuodb --initialize --force &
+${NUODB_ROOT}/bin/nuodb --chorus test --password bar --dba-user dba --dba-password user &
+```
+
 In order to run tests you should start NuoDB using the settings specified in
 the test-settings.json file. This can be done simply via the quickstart script
 in rhe NuoDB distribution.

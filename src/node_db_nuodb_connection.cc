@@ -34,6 +34,7 @@
 node_db_nuodb::Connection::Connection()
     : handle(0) {
 
+    this->hostname = "localhost";
     this->port = 48004;
     this->quoteName = '"';
 }
@@ -59,14 +60,15 @@ bool node_db_nuodb::Connection::isAlive(bool ping) throw() {
 void node_db_nuodb::Connection::open() throw(node_db::Exception&) {
     this->close();
     try {
+        std::ostringstream connection_string;
+        connection_string << this->database << "@" << this->hostname << ":" << this->port;
         NuoDB::Connection * connection = NuoDB::Connection::create();
         NuoDB::Properties * props = connection->allocProperties();
-        props->putValue("host", this->hostname.c_str());
         props->putValue("user", this->user.c_str());
         props->putValue("password", this->password.c_str());
         props->putValue("schema", this->schema.c_str());
 
-        connection->openDatabase(this->database.c_str(), props);
+        connection->openDatabase(connection_string.str().c_str(), props);
         handle = reinterpret_cast<uintptr_t>(connection);
 
         this->alive = true;

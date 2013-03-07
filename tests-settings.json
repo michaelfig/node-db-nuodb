@@ -1,7 +1,8 @@
 { 
-    "host": "localhost",
+    "hostname": "localhost",
     "user": "dba",
-    "password": "goalie",
+    "password": "user",
     "database": "test",
-    "schema": "Hockey"
+    "schema": "test",
+    "port": 48004
 }
