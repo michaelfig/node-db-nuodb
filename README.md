@@ -160,6 +160,10 @@ following instructions to suit.
 	rm -fr *
 	git reset --hard
 	git submodule add git://github.com/lbayas/node-db.git lib/node-db
+  git add -u
+  git status
+  git commit -m "Repointed successfully to lbayas fork. Bumped version number."
+	git push
 ```
 
 ## LICENSE ##
