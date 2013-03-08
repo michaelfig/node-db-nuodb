@@ -31,7 +31,7 @@
     "scripts":{
         "install":"export NODE_PATH=`which node` && node-waf configure build",
         "preuninstall":"rm -rf build/*",
-        "test":"node-waf test",
+        "test":"nodeunit test",
         "doc":"node-waf doc"
     },
     "devDependencies":{

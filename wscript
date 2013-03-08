@@ -62,4 +62,4 @@ def test(ctx):
   test_binary = 'nodeunit'
   if Options.options.debug:
     test_binary = 'nodeunit_g'
-  Utils.exec_command(test_binary + ' tests.js')
+  Utils.exec_command(test_binary + ' test')
