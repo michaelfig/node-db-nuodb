@@ -13,6 +13,11 @@ notifications:
     - rbuck@nuodb.com
 
 before_install:
+  - wget http://nodejs.org/dist/v0.10.1/node-v0.10.1.tar.gz
+  - tar xzvf node-v0.10.1.tar.gz
+  - cd node-v0.10.1
+  - sudo ./configure && sudo make && sudo make install
+  - cd ..
   - wget http://www.nuodb.com/latest/nuodb-1.0-GA.linux.x86_64.deb --output-document=/var/tmp/nuodb.deb
   - sudo dpkg -i /var/tmp/nuodb.deb
   - sleep 2
