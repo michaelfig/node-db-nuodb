@@ -87,7 +87,7 @@ void node_db_nuodb::Connection::close() {
 }
 
 std::string node_db_nuodb::Connection::escape(const std::string& string) const throw(node_db::Exception&) {
-    throw node_db::Exception("This binding does not implement escape()");
+  throw node_db::Exception("This binding does not implement escape()");
 }
 
 std::string node_db_nuodb::Connection::version() const {
@@ -115,7 +115,7 @@ node_db::Result* node_db_nuodb::Connection::query(const std::string& query) cons
 
         node_db_nuodb::Result * result = new node_db_nuodb::Result(results, affectedRows);
         return result;
-    } catch(NuoDB::SQLException & ex) {
-        throw node_db::Exception(ex.getText());
+    } catch(NuoDB::SQLException & exception) {
+        throw node_db::Exception(exception.getText());
     }
 }

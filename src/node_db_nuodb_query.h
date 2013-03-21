@@ -29,8 +29,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "./node-db/node_defs.h"
-#include "./node-db/query.h"
+#include "../lib/node-db/node_defs.h"
+#include "../lib/node-db/query.h"
 
 namespace node_db_nuodb {
 class Query : public node_db::Query {

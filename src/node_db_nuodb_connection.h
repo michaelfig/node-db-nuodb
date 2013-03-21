@@ -30,7 +30,7 @@
  ****************************************************************************/
 
 #include <string>
-#include "./node-db/connection.h"
+#include "../lib/node-db/connection.h"
 #include "Connection.h"
 
 namespace node_db_nuodb {

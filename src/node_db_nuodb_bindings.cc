@@ -26,16 +26,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "./node-db/binding.h"
+#include "../lib/node-db/binding.h"
 #include "./node_db_nuodb.h"
 #include "./node_db_nuodb_query.h"
 
 extern "C" {
-    void init(v8::Handle<v8::Object> target) {
-        node_db::EventEmitter::Init();
-        node_db_nuodb::NuoDB::Init(target);
-        node_db_nuodb::Query::Init(target);
-    }
+  void init(v8::Handle<v8::Object> exports) {
+    node_db::EventEmitter::Init();
+    node_db_nuodb::NuoDB::Init(exports);
+    node_db_nuodb::Query::Init(exports);
+  }
 
-    NODE_MODULE(nuodb_bindings, init);
+  NODE_MODULE(nuodb_bindings, init)
+
 }

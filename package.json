@@ -4,10 +4,12 @@
     "keywords":["database", "db", "native", "binding", "library", "plugin", "client", "nuodb"],
     "homepage":"http://nuodb.github.com/node-db-nuodb/",
     "version":"1.0.3",
+    "author": "NuoDB, Inc.",
+    "bin": {},
     "engines":{
-        "node":">=0.4.1"
+        "node":">=0.4.1" 
     },
-    "maintainers":[
+    "contributors":[
         {
             "name":"NuoDB, Inc.",
             "email":"rbuck@nuodb.com"
@@ -29,13 +31,14 @@
     ],
     "main":"./db-nuodb",
     "scripts":{
-        "install":"export NODE_PATH=`which node` && node-waf configure build",
-        "preuninstall":"rm -rf build/*",
-        "test":"nodeunit test",
+        "install":"make all",
+        "uninstall":"make clean",
+        "test":"make test",
         "doc":"node-waf doc"
     },
     "devDependencies":{
         "nodeunit":"*",
-        "nodelint":"*"
+        "nodelint":"*",
+	"underscore": "*"
     }
 }

@@ -29,8 +29,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "./node-db/node_defs.h"
-#include "./node-db/binding.h"
+#include "../lib/node-db/node_defs.h"
+#include "../lib/node-db/binding.h"
 
 namespace node_db_nuodb {
     class NuoDB : public node_db::Binding {

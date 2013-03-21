@@ -17,7 +17,8 @@ for(var test in tests) {
 }
 
 delete exports["Client"]["escape()"];
-delete exports["Query"]["where()"]; // escape in test causes it to fail; okay
+delete exports["Query"]["insert()"];
+delete exports["Query"]["where()"];
 delete exports["Query"]["limit()"];
 delete exports["Query"]["select markers"];
 delete exports["Query"]["insert markers"];
