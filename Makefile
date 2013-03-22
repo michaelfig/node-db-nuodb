@@ -11,8 +11,8 @@ deps:
 	sudo npm install -g node-gyp
 
 	# install local packages
-	sudo npm install nodeunit
-	sudo npm install underscore
+	npm install nodeunit
+	npm install underscore
 
 	# sync submodule
 	git submodule update --init
@@ -34,7 +34,6 @@ clean:
 	# remove module dependencies
 	node-gyp clean
 	sudo rm -rf build
-	sudo rm -rf node_modules
 
 test:
 	nodeunit $(TESTS)
