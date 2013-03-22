@@ -40,7 +40,7 @@
     "devDependencies":{
         "nodeunit":"*",
         "nodelint":"*",
-	"underscore": "*"
+	"underscore": "*",
 	"node-gyp": "*"
     }
 }
