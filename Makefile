@@ -24,7 +24,7 @@ build:
 
 install:
 	# install npm module
-	sudo node-gyp install
+	node-gyp install
 
 rebuild:
 	# rebuild npm module
@@ -33,7 +33,7 @@ rebuild:
 clean:
 	# remove module dependencies
 	node-gyp clean
-	sudo rm -rf build
+	rm -rf build
 
 test:
 	nodeunit $(TESTS)
