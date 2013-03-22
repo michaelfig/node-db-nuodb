@@ -1,7 +1,6 @@
 TESTS=$(shell find test -name "*.js")
 
 all:
-	make clean
 	make deps
 	make build
 	make install
