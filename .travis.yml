@@ -1,11 +1,8 @@
 language: node_js
 
 node_js:
-  - 0.6
-  - 0.7
-  - 0.8
-  - 0.9
-  - 0.10
+  - "0.10"
+  - "0.8"
 
 env:
   - NUODB_ROOT=/opt/nuodb NUODB_INCLUDE_DIR=/opt/nuodb/include NUODB_LIB_DIR=/opt/nuodb/lib64
@@ -16,11 +13,6 @@ notifications:
     - rbuck@nuodb.com
 
 before_install:
-  - wget http://nodejs.org/dist/v0.10.1/node-v0.10.1.tar.gz
-  - tar xzvf node-v0.10.1.tar.gz
-  - cd node-v0.10.1
-  - sudo ./configure && sudo make && sudo make install
-  - cd ..
   - wget http://www.nuodb.com/latest/nuodb-1.0-GA.linux.x86_64.deb --output-document=/var/tmp/nuodb.deb
   - sudo dpkg -i /var/tmp/nuodb.deb
   - sleep 2
