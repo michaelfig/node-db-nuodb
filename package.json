@@ -32,7 +32,7 @@
     ],
     "main":"./db-nuodb",
     "scripts":{
-        "install":"make all",
+        "install":"make build && make install",
         "uninstall":"make clean",
         "test":"make test",
         "doc":"node-waf doc"
@@ -41,5 +41,6 @@
         "nodeunit":"*",
         "nodelint":"*",
 	"underscore": "*"
+	"node-gyp": "*"
     }
 }
