@@ -2,13 +2,17 @@
 
 [![Build Status](https://travis-ci.org/nuodb/node-db-nuodb.png?branch=master)](https://travis-ci.org/nuodb/node-db-nuodb)
 
-This module lets you integrate your [node.js](http://www.nodejs.org) web applications with [NuoDB](http://www.nuodb.com).
+This module builds a native [Google V8](https://developers.google.com/v8/) C++ binding to let you easily integrate your [node.js](http://www.nodejs.org) web applications with [NuoDB](http://www.nuodb.com).
 
-## Install
+### Requirements
+`make` 
+`g++`
+
+### Install
 
     $ npm install db-nuodb
 
-## Example
+### Example
 
 ```javascript
 var nuodb = require('db-nuodb');
@@ -31,6 +35,6 @@ new nuodb.Database({
 });
 ```
 
-## License
+### License
 
 [NuoDB License](https://github.com/nuodb/nuodb-drivers/blob/master/LICENSE)
