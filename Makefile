@@ -15,6 +15,7 @@ deps:
 	npm install underscore
 
 	# sync submodule
+	git init
 	git submodule update --init
 
 build:
