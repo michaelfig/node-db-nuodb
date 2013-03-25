@@ -3,7 +3,7 @@
     "description":"NuoDB database bindings for Node.JS",
     "keywords":["database", "db", "native", "binding", "library", "plugin", "client", "nuodb"],
     "homepage":"http://nuodb.github.com/node-db-nuodb/",
-    "version":"1.0.7",
+    "version":"1.0.8",
     "author": "NuoDB, Inc.",
     "bin": {},
     "engines":{
