@@ -36,7 +36,7 @@ module.exports = nodeunit.testCase({
     var self = this;
     createDbClient(function(client) {
       self.client = client;
-      cmd = "CREATE TABLE events (name VARCHAR(50) NULL, value VARCHAR(50) NULL, type VARCHAR(50) NOT NULL, PID VARCHAR(50) NOT NULL, HOSTNAME VARCHAR(50) NOT NULL)";
+      cmd = "CREATE TABLE events (name VARCHAR(50) NULL, value VARCHAR(50) NULL, type VARCHAR(50) NOT NULL, PID VARCHAR(50) NOT NULL, HOSTNAME VARCHAR(50) NOT NULL, MYTIME TIMESTAMP)";
       self.client.query().execute(cmd, function(error) { 
 	if(error) {
 	    throw new Error('Error: ' + error);
@@ -67,6 +67,7 @@ module.exports = nodeunit.testCase({
         type : "DDRAM",
         PID: 123,
         HOSTNAME : "HUW1",
+        MYTIME: "now"
     }          
     fields = [];
     values = [];
@@ -75,6 +76,33 @@ module.exports = nodeunit.testCase({
         values.push(mock_data[r]);           
     }
     this.client.query().insert("EVENTS", fields, values).execute(function(error) { 
+      if(error) {
+	console.log('Error: ' + error);
+        test.done(1);
+      } else {
+	self.client.query().select("*").from("stats.events").execute(function(error, rows){
+	  if(error){
+	    console.log('Error: ' + error);
+            test.done(1);
+          } else {
+	    if(_.isEmpty(rows)){
+	      console.log('Error: ' + error);
+              test.done(1);
+            } else {
+	      test.done();
+	    }
+          }
+        });
+      }
+    });
+  },
+
+  "execute INSERT with field/value arrays via insert()": function(test) {
+    var self = this;
+      table  = 'events';
+      fields = ['name', 'value', 'type', 'pid', 'hostname', 'mytime'];
+      values = ['foo', 'bar', 'hello', 'world', 'localhost', 'now'];
+      this.client.query().insert(table, fields, values, true).execute(function(error) { 
       if(error) {
 	console.log('Error: ' + error);
         test.done(1);
