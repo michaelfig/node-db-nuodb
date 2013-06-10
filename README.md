@@ -38,3 +38,5 @@ new nuodb.Database({
 ### License
 
 [NuoDB License](https://github.com/nuodb/nuodb-drivers/blob/master/LICENSE)
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/1f9431fe8d36367b37644bd77eb55724 "githalytics.com")](http://githalytics.com/nuodb/node-db-nuodb)
