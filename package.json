@@ -24,7 +24,7 @@
             "type":"BSD"
         }
     ],
-    "repositories":[
+    "repository":[
         {
             "type":"git",
             "url":"https://github.com/nuodb/node-db-nuodb.git"
