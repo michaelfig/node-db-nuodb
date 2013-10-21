@@ -6,8 +6,8 @@ node_js:
   - "0.6"
 
 env:
-  - NUODB_ROOT=/opt/nuodb NUODB_INCLUDE_DIR=/opt/nuodb/include NUODB_LIB_DIR=/opt/nuodb/lib64 NODE_PATH=/usr/local/bin NUODB_VERSION=2.0
-  - NUODB_ROOT=/opt/nuodb NUODB_INCLUDE_DIR=/opt/nuodb/include NUODB_LIB_DIR=/opt/nuodb/lib64 NODE_PATH=/usr/local/bin NUODB_VERSION=1.2
+  - NUODB_HOME=/opt/nuodb NUODB_VERSION=2.0
+  - NUODB_HOME=/opt/nuodb NUODB_VERSION=1.2
 
 notifications:
   recipients:
@@ -21,9 +21,9 @@ before_install:
   - sleep 2
 
 before_script:
-  - java -jar ${NUODB_ROOT}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process sm database test host localhost archive /var/tmp/nuodb initialize true waitForRunning true"
-  - java -jar ${NUODB_ROOT}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password user' waitForRunning true"
-  - echo "create user cloud password 'user';" | ${NUODB_ROOT}/bin/nuosql test@localhost --user dba --password user
+  - java -jar ${NUODB_HOME}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process sm database test host localhost archive /var/tmp/nuodb initialize true waitForRunning true"
+  - java -jar ${NUODB_HOME}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password user' waitForRunning true"
+  - echo "create user cloud password 'user';" | ${NUODB_HOME}/bin/nuosql test@localhost --user dba --password user
 
 after_script:
   - sudo dpkg -r nuodb
