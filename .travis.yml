@@ -22,8 +22,8 @@ before_install:
 
 before_script:
   - java -jar ${NUODB_ROOT}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process sm database test host localhost archive /var/tmp/nuodb initialize true waitForRunning true"
-  - java -jar ${NUODB_ROOT}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password baz' waitForRunning true"
-  - echo "create user cloud password 'user';" | ${NUODB_ROOT}/bin/nuosql test@localhost --user dba --password baz
+  - java -jar ${NUODB_ROOT}/jar/nuodbmanager.jar --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password user' waitForRunning true"
+  - echo "create user cloud password 'user';" | ${NUODB_ROOT}/bin/nuosql test@localhost --user dba --password user
 
 after_script:
   - sudo dpkg -r nuodb
