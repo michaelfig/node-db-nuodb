@@ -23,32 +23,37 @@
                         ],
                         "conditions": [
                                 ["OS=='linux'", {
+                                        "variables": {
+                                            "nuodb_home": '<!(echo ${NUODB_HOME-"/opt/nuodb"})'
+                                        },
                                         "cflags": [
                                                 "-Wall",
                                                 "-w"
                                         ],
                                         "link_settings": {
                                                 "libraries": [
-                                                           "-Wl,-rpath,/opt/nuodb/lib64",
-                                                           "-L/opt/nuodb/lib64",
+                                                           "-Wl,-rpath,<(nuodb_home)/lib64",
+                                                           "-L<(nuodb_home)/lib64",
                                                            "-lNuoRemote"
                                                 ],
                                                 "include_dirs": [
-                                                           "/opt/nuodb/lib64"
+                                                           "<(nuodb_home)/lib64"
                                                 ]
                                         },
                                         "include_dirs": [
                                                 "lib",
-                                                "/usr/local/include/node",
-                                                "/opt/nuodb",
-                                                "/opt/nuodb/lib64",
-                                                "/opt/nuodb/include"
+                                                "<(nuodb_home)",
+                                                "<(nuodb_home)/lib64",
+                                                "<(nuodb_home)/include"
                                         ]
                                 }],
                                 ["OS=='mac'", {
+                                        "variables": {
+                                            "nuodb_home": '<!(echo ${NUODB_HOME-"/opt/nuodb"})'
+                                        },
                                         "xcode_settings": {
                                                 "LD_RUNPATH_SEARCH_PATHS": [
-                                                        "/opt/nuodb/lib64"
+                                                        "<(nuodb_home)/lib64"
                                                 ],
                                                 "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
                                                 "WARNING_CFLAGS!": [
@@ -58,42 +63,43 @@
                                         },
                                         "link_settings": {
                                                 "libraries": [
-                                                           "-L/opt/nuodb/lib64",
+                                                           "-L<(nuodb_home)/lib64",
                                                            "-lNuoRemote"
                                                 ],
                                                 "include_dirs": [
-                                                           "/opt/nuodb/lib64"
+                                                           "<(nuodb_home)/lib64"
                                                 ]
                                         },
                                         "include_dirs": [
                                                 "lib",
-                                                "/usr/local/include/node",
-                                                "/opt/nuodb",
-                                                "/opt/nuodb/lib64",
-                                                "/opt/nuodb/include"
+                                                "<(nuodb_home)",
+                                                "<(nuodb_home)/lib64",
+                                                "<(nuodb_home)/include"
                                         ]
                                 }],
                                 ["OS=='solaris'", {
+                                        "variables": {
+                                            "nuodb_home": '<!(echo ${NUODB_HOME-"/opt/nuodb"})'
+                                        },
                                         "cflags": [
                                                 "-Wall",
                                                 "-W"
                                         ],
                                         "link_settings": {
                                                 "libraries": [
-                                                           "-Wl,-rpath,/opt/nuodb/lib64",
-                                                           "-L/opt/nuodb/lib64",
+                                                           "-Wl,-rpath,<(nuodb_home)/lib64",
+                                                           "-L<(nuodb_home)/lib64",
                                                            "-lNuoRemote"
                                                 ],
                                                 "include_dirs": [
-                                                           "/opt/nuodb/lib64"
+                                                           "<(nuodb_home)/lib64"
                                                 ]
                                         },
                                         "include_dirs": [
                                                 "lib",
-                                                "/usr/local/include/node",
-                                                "/opt/nuodb",
-                                                "/opt/nuodb/lib64",
-                                                "/opt/nuodb/include"
+                                                "<(nuodb_home)",
+                                                "<(nuodb_home)/lib64",
+                                                "<(nuodb_home)/include"
                                         ]
                                 }]
                         ]
