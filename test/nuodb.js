@@ -9,7 +9,7 @@ var testCase = nodeunit.testCase;
 // database information
 var HOSTNAME = "localhost";
 var USER     = "dba";
-var PASSWORD = "user";
+var PASSWORD = "dba";
 var DATABASE = "test";
 var SCHEMA   = "stats";
 var PORT     = 48004;
