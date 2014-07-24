@@ -101,21 +101,43 @@ std::string node_db_nuodb::Connection::version() const {
 }
 
 node_db::Result* node_db_nuodb::Connection::query(const std::string& query) const throw(node_db::Exception&) {
-    NuoDB::Connection * connection = reinterpret_cast<NuoDB::Connection*>(handle);
-    try {
-        NuoDB::PreparedStatement * statement = connection->prepareStatement(query.c_str());
-        NuoDB::ResultSet * results = NULL;
-        int affectedRows = 0;
+  NuoDB::Connection * connection = reinterpret_cast<NuoDB::Connection*>(handle);
+  try {
+	NuoDB::PreparedStatement * statement = connection->prepareStatement(query.c_str(), NuoDB::RETURN_GENERATED_KEYS);
+	NuoDB::ResultSet * results = NULL;
+	int affectedRows = 0;
+	int insertId = 0;
 
 	if (statement->execute()) {
-		results = statement->getResultSet();
+	  results = statement->getResultSet();
 	} else {
-		affectedRows = statement->getUpdateCount();
+	  affectedRows = statement->getUpdateCount();
+	  /*
+		the following is cribbed from the pdo driver and seems rather deficient.
+		the node db api seems to want an int for insertId, but that leaves many
+		questions open:
+		what if we inserted multiple rows?
+		what if there were multiple generated ids for this one row?
+
+		without a spec to guide us, we do the quick thing: take the first int
+		from the generated keys result set, and return that, or zero upon error
+	  */
+	  if (affectedRows != 0) {
+		NuoDB::ResultSet *_rs_gen_keys = NULL;
+
+		_rs_gen_keys = statement->getGeneratedKeys();
+		if (_rs_gen_keys != NULL) {
+		  while (_rs_gen_keys->next()) {
+			insertId = _rs_gen_keys->getInt(1);
+		  }
+		  _rs_gen_keys->close();
+		}
+	  }
 	}
 
-        node_db_nuodb::Result * result = new node_db_nuodb::Result(results, affectedRows);
-        return result;
-    } catch(NuoDB::SQLException & exception) {
-        throw node_db::Exception(exception.getText());
-    }
+	node_db_nuodb::Result * result = new node_db_nuodb::Result(results, affectedRows, insertId);
+	return result;
+  } catch(NuoDB::SQLException & exception) {
+	throw node_db::Exception(exception.getText());
+  }
 }

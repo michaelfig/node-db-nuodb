@@ -69,9 +69,9 @@ node_db::Result::Column::type_t node_db_nuodb::Result::Column::getType() const {
     return this->type;
 }
 
-node_db_nuodb::Result::Result(NuoDB::ResultSet * results, int affectedRows) throw(node_db::Exception&)
+node_db_nuodb::Result::Result(NuoDB::ResultSet * results, int affectedRows, int lastInsertId) throw(node_db::Exception&)
     : columns(NULL), totalColumns(0), rowNumber(0), empty(true), resultSet(results),
-    previousColumnLengths(NULL), nextColumnLengths(NULL), previousRow(NULL), nextRow(NULL), affectedRows(affectedRows)
+	  previousColumnLengths(NULL), nextColumnLengths(NULL), previousRow(NULL), nextRow(NULL), affectedRows(affectedRows), lastInsertId(lastInsertId)
 {
 
     if(results) {
@@ -269,8 +269,7 @@ uint64_t node_db_nuodb::Result::affectedCount() const throw() {
 }
 
 uint64_t node_db_nuodb::Result::insertId() const throw(node_db::Exception&) {
-    //TODO:
-    return 0;
+  return this->lastInsertId;
 }
 
 uint16_t node_db_nuodb::Result::warningCount() const throw(node_db::Exception&) {
