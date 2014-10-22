@@ -5,24 +5,10 @@ var util     = require("util");
 var nuodb    = require("./../db-nuodb");
 var nodeunit = require("nodeunit");
 var testCase = nodeunit.testCase;
-
-// database information
-var HOSTNAME = "localhost";
-var USER     = "dba";
-var PASSWORD = "user";
-var DATABASE = "test";
-var SCHEMA   = "stats";
-var PORT     = 48004;
+var settings = JSON.parse(require('fs').readFileSync(require('path').resolve(__dirname, 'tests-settings.json'),'utf8'));
 
 createDbClient = function(callback){
-      new nuodb.Database({
-        hostname: HOSTNAME,
-        user: USER,
-        password: PASSWORD,
-        database: DATABASE,
-        port: PORT,
-	schema: SCHEMA
-      }).connect(function(error){
+      new nuodb.Database(settings).connect(function(error){
           if (error) {
               throw new Error('Could not connect to test DB');
           }
@@ -49,7 +35,7 @@ module.exports = nodeunit.testCase({
 
   tearDown: function(callback) {
     var self = this;
-    cmd = "DROP TABLE stats.events";
+    cmd = "DROP TABLE events";
     this.client.query().execute(cmd, function(error){
       if(error){
 	  throw new Error('Error: ' + error);
@@ -80,7 +66,7 @@ module.exports = nodeunit.testCase({
 	console.log('Error: ' + error);
         test.done(1);
       } else {
-	self.client.query().select("*").from("stats.events").execute(function(error, rows){
+	self.client.query().select("*").from("events").execute(function(error, rows){
 	  if(error){
 	    console.log('Error: ' + error);
             test.done(1);
@@ -107,7 +93,7 @@ module.exports = nodeunit.testCase({
 	console.log('Error: ' + error);
         test.done(1);
       } else {
-	self.client.query().select("*").from("stats.events").execute(function(error, rows){
+	self.client.query().select("*").from("events").execute(function(error, rows){
 	  if(error){
 	    console.log('Error: ' + error);
             test.done(1);
@@ -133,7 +119,7 @@ module.exports = nodeunit.testCase({
 	  console.log('Error: ' + error);
           test.done(1);
       } else {
-	self.client.query().select("*").from("stats.events").execute(function(error, rows){
+	self.client.query().select("*").from("events").execute(function(error, rows){
 	  if(error){
 	    console.log('Error: ' + error);
             test.done();           
@@ -159,7 +145,7 @@ module.exports = nodeunit.testCase({
 	console.log('Error: ' + error);
         test.done(1);
       } else {
-	self.client.query().select("*").from("stats.events").execute(function(error, rows){
+	self.client.query().select("*").from("events").execute(function(error, rows){
 	  if(error){
 	    console.log('Error: ' + error);
             test.done(1);           
