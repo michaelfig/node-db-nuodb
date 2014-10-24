@@ -42,24 +42,29 @@
     <h3>Install</h3>
 
     <p>Before proceeding with installation, make sure you have NuoDB installed on your system.
-      Specifically, you should have access to the libNuoRemote binary. Make sure you specify
-      the NUODB_ROOT environment variable:</p>
+      Specifically, you should have access to the libNuoRemote binary. If your NuoDB installation is not under 
+      the default location (usually /opt/nuodb), then you MUST specify the NUODB_HOME environment variable:</p>
 
-    <pre><code>$ export NUODB_ROOT=/usr/local/nuodb</code></pre>
+    <pre><code>$ export NUODB_HOME=/usr/local/nuodb # ignore this if using default location</code></pre>
 
     <p>And now for the actual install, having set up your environment, above:</p>
 
     <pre><code>$ npm install db-nuodb</code></pre>
 
     <h3>Connecting</h3>
+    <p>You should have a running NuoDB Database to try these examples. But don't fret, we can get a running NuoDB Database
+    running by using a quickstart script which is shipped alongside NuoDB. </p>
+    <pre><code>$ /opt/nuodb/run-quickstart </code></pre>
+
+    <p>If you already have a running NuoDB Database simply correct the credentials used below.</p>
 
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).on('error', function(error) {
         console.log('ERROR: ' + error);
     }).on('ready', function(server) {
@@ -71,19 +76,19 @@
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).connect(function(error) {
         if (error) {
             return console.log('CONNECTION error: ' + error);
         }
         this.query().
             select('*').
-            from('users').
-            where('approved = ?', [ true ]).
-            order({'created': false}).
+            from('hockey').
+            where('position = ?', [ 'Defense' ]).
+            order({'number': false}).
             execute(function(error, rows, cols) {
                     if (error) {
                             console.log('ERROR: ' + error);
@@ -102,15 +107,15 @@
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).connect(function(error) {
         if (error) {
             return console.log('CONNECTION error: ' + error);
         }
-        this.query('SELECT * FROM ' + this.name('users') + ' WHERE ' + this.name('name') + ' LIKE \'' + this.escape('%John%') + '\'').
+        this.query('SELECT * FROM ' + this.name('hockey') + ' WHERE ' + this.name('name') + ' LIKE \'A%\'').
             execute(function(error, rows, cols) {
                     if (error) {
                             console.log('ERROR: ' + error);
@@ -125,18 +130,18 @@
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).connect(function(error) {
         if (error) {
             return console.log('CONNECTION error: ' + error);
         }
         this.query().
-            insert('users',
-                ['name', 'created', 'role', 'approved'],
-                ['Test User', {value: 'NOW', escape: false}, 'user', true]
+            insert('hockey',
+                ['Number', 'Name', 'Position'],
+                [33,'Test User', 'TESTER']
             ).
             execute(function(error, result) {
                     if (error) {
@@ -152,18 +157,18 @@
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).connect(function(error) {
         if (error) {
             return console.log('CONNECTION error: ' + error);
         }
         this.query().
-            update('users').
-            set({ 'name': 'New Name' }).
-            where('id = ?', [ 1 ])
+            update('hockey').
+            set({ 'name': 'New Name Tester' }).
+            where('id = ?', [ 24 ]).
             execute(function(error, result) {
                     if (error) {
                             console.log('ERROR: ' + error);
@@ -178,18 +183,18 @@
     <pre><code>var nuodb = require('db-nuodb');
     new nuodb.Database({
         hostname: 'localhost',
-        user: 'user',
-        password: 'password',
+        user: 'dba',
+        password: 'goalie',
         database: 'test',
-        schema: 'test'
+        schema: 'hockey'
     }).connect(function(error) {
         if (error) {
             return console.log('CONNECTION error: ' + error);
         }
         this.query().
             delete().
-            from('users')
-            where('id = ?', [ 1 ])
+            from('hockey').
+            where('name like ? ', [ 'Test%' ]).
             execute(function(error, result) {
                     if (error) {
                             console.log('ERROR: ' + error);
