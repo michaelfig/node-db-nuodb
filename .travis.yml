@@ -27,8 +27,8 @@ before_install:
 
 before_script:
   - /opt/nuodb/bin/nuodbmgr --broker localhost --user domain --password bird --command "start process sm database test host localhost archive /var/opt/nuodb/production-archives/test initialize true waitForRunning true"
-  - /opt/nuodb/bin/nuodbmgr --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password user' waitForRunning true"
-  - echo "create user cloud password 'user';" | ${NUODB_HOME}/bin/nuosql test@localhost --user dba --password user
+  - /opt/nuodb/bin/nuodbmgr --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password goalie' waitForRunning true"
+  - echo "create user cloud password 'user';" | ${NUODB_HOME}/bin/nuosql test@localhost --user dba --password goalie
 
 after_script:
   - sudo dpkg -r nuodb
