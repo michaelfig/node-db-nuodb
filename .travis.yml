@@ -1,9 +1,9 @@
 language: node_js
 
 node_js:
-  - NODE="0.10"
-  - NODE="0.8"
-  - NODE="0.6"
+  - "0.10"
+  - "0.8"
+  - "0.6"
 
 env:
   - NUODB_HOME=/opt/nuodb NUODB_VERSION=2.0.4
@@ -23,7 +23,7 @@ notifications:
 before_install:
   - wget http://download.nuohub.org/nuodb-${NUODB_VERSION}.linux.x64.deb --output-document=/var/tmp/nuodb.deb
   - sudo dpkg -i /var/tmp/nuodb.deb
-  - '[ "${NODE}" == "0.10" ] || npm install -g npm@1.4.28'
+  - '[ "${TRAVIS_NODE_VERSION}" == "0.10" ] || npm install -g npm@1.4.28'
   - npm install -g npm@latest
   - sleep 2
 
