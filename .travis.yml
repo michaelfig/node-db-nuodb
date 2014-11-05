@@ -23,14 +23,14 @@ notifications:
 before_install:
   - wget http://download.nuohub.org/nuodb-${NUODB_VERSION}.linux.x64.deb --output-document=/var/tmp/nuodb.deb
   - sudo dpkg -i /var/tmp/nuodb.deb
+  - '[ "${TRAVIS_NODE_VERSION}" != "0.8" ] || npm install -g npm@1.4.28'
+  - '[ "${TRAVIS_NODE_VERSION}" != "0.6" ] || npm install -g npm@1.3.26'
   - sleep 2
 
 before_script:
   - /opt/nuodb/bin/nuodbmgr --broker localhost --user domain --password bird --command "start process sm database test host localhost archive /var/opt/nuodb/production-archives/test initialize true waitForRunning true"
   - /opt/nuodb/bin/nuodbmgr --broker localhost --user domain --password bird --command "start process te database test host localhost options '--dba-user dba --dba-password goalie' waitForRunning true"
   - echo "create user cloud password 'user';" | ${NUODB_HOME}/bin/nuosql test@localhost --user dba --password goalie
-  - '[ "${TRAVIS_NODE_VERSION}" != "0.8" ] || npm install -g npm@1.4.28'
-  - '[ "${TRAVIS_NODE_VERSION}" != "0.6" ] || npm install -g npm@1.3.26'
 
 after_script:
   - sudo dpkg -r nuodb
