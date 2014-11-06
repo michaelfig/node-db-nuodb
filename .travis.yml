@@ -3,7 +3,6 @@ language: node_js
 node_js:
   - "0.10"
   - "0.8"
-  - "0.6"
 
 env:
   - NUODB_HOME=/opt/nuodb NUODB_VERSION=2.1 NUODB_DOWNLOAD_URL=http://download.nuohub.org/nuodb_2.1.0.2.deb NUODB_ADD_DOMAIN_PASS=yes NUODB_START_AGENT=yes
@@ -22,7 +21,7 @@ before_install:
   - sudo dpkg -i /var/tmp/nuodb.deb
   - if [[ "${NUODB_ADD_DOMAIN_PASS}" == "yes" ]] ; then sudo chmod 777 ${NUODB_HOME}/etc/default.properties; echo "domainPassword = bird" >> ${NUODB_HOME}/etc/default.properties; sudo chmod 600 ${NUODB_HOME}/etc/default.properties; fi
   - if [[ "${NUODB_START_AGENT}" == "yes" ]]; then sudo service nuoagent start; fi
-  - sleep 4
+  - sleep 10
 
 
 before_script:
