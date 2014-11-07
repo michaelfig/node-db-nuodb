@@ -5,7 +5,7 @@
 This module builds a native [Google V8](https://developers.google.com/v8/) C++ binding to let you easily integrate your [node.js](http://www.nodejs.org) web applications with [NuoDB](http://www.nuodb.com).
 
 ### Requirements
-`make` 
+`make`  
 `g++`
 
 ### Install
