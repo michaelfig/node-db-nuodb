@@ -18,21 +18,15 @@ This module builds a native [Google V8](https://developers.google.com/v8/) C++ b
 var nuodb = require('db-nuodb');
 new nuodb.Database({
     hostname: 'localhost',
-    user: 'root',
-    password: 'password',
-    database: 'node'
-}).connect(function(error) {
-    if (error) {
-        return console.log("CONNECTION ERROR: " + error);
-    }
-
-    this.query().select('*').from('users').execute(function(error, rows) {
-        if (error) {
-            return console.log('ERROR: ' + error);
-        }
-        console.log(rows.length + ' ROWS');
-    });
-});
+    user: 'dba',
+    password: 'goalie',
+    database: 'test',
+    schema: 'hockey'
+}).on('error', function(error) {
+    console.log('ERROR: ' + error);
+}).on('ready', function(server) {
+    console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
+}).connect();
 ```
 
 ### License
