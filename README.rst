@@ -43,18 +43,18 @@ Here is basic use of the driver that includes connecting to a NuoDB server, then
 
 .. code:: javascript
 
-var nuodb = require('db-nuodb');
-new nuodb.Database({
-    hostname: 'localhost',
-    user: 'dba',
-    password: 'goalie',
-    database: 'test',
-    schema: 'hockey'
-}).on('error', function(error) {
-    console.log('ERROR: ' + error);
-}).on('ready', function(server) {
-    console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
-}).connect();
+    var nuodb = require('db-nuodb');
+    new nuodb.Database({
+        hostname: 'localhost',
+        user: 'dba',
+        password: 'goalie',
+        database: 'test',
+        schema: 'hockey'
+    }).on('error', function(error) {
+        console.log('ERROR: ' + error);
+    }).on('ready', function(server) {
+        console.log('Connected to ' + server.hostname + ' (' + server.version + ')');
+    }).connect();
 
 For further information on getting started with NuoDB, please refer to the Documentation_.
 
