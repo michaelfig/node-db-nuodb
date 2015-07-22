@@ -14,6 +14,7 @@ GNU Compiler Collection -- both of the following
 
 NuoDB -- one of the following
    -  [NuoDB](http://www.nuodb.com) >= 2.0.4
+   
 If you haven't done so already, [Download and Install NuoDB](http://dev.nuodb.com/download-nuodb/request/download/).
 
 ### Install
