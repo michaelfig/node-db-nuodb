@@ -6,17 +6,18 @@ NuoDB - Node.js
 	:target: https://travis-ci.org/nuodb/node-db-nuodb 
 
 .. contents::
-This module contains the official NuoDB_ Node.js driver built from native `Google V8 <https://developers.google.com/v8/>`_ C++ binding to let you easily integrate your `node.js <http://www.nodejs.org>` _ web applications with NuoDB_.
+This module contains the official NuoDB_ Node.js driver built from native `Google V8 <https://developers.google.com/v8/>`_ C++ binding to let you easily integrate your `node.js <http://www.nodejs.org>`_ web applications with NuoDB_.
 
 Requirements
 ------------
- * GNU Compiler Collection -- both of the following
+
+* GNU Compiler Collection -- both of the following
 
  	- Make
 
  	- g++
 
- * NuoDB -- one of the following
+* NuoDB -- one of the following
 
    - NuoDB_ >= 2.0.4
 
@@ -39,6 +40,7 @@ from GitHub and installed with node-gyp::
 Example
 ------------
 Here is basic use of the driver that includes connecting to a NuoDB server, then printing the host name and server version:
+
 .. code:: javascript
 
 var nuodb = require('db-nuodb');
