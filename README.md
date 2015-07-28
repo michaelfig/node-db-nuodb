@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/nuodb/node-db-nuodb.png?branch=master)](https://travis-ci.org/nuodb/node-db-nuodb)
 
-This module contains the NuoDB Node.js driver built from native [Google V8](https://developers.google.com/v8/) C++ binding to let you easily integrate your [Node.js](http://www.nodejs.org) web applications with [NuoDB](http://www.nuodb.com).
+This module contains the community driven NuoDB Node.js driver built from native [Google V8](https://developers.google.com/v8/) C++ binding to let you easily integrate your [Node.js](http://www.nodejs.org) web applications with [NuoDB](http://www.nuodb.com). This is a community driven driver with limited support and testing from NuoDB.
 
 ### Requirements
 Node.js -- one of the following
