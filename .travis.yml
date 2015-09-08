@@ -11,10 +11,9 @@ env:
   
 notifications:
   recipients:
-    - buck.robert.j@gmail.com
-    - rbuck@nuodb.com
-    - jgetto@nuodb.com
     - tgates@nuodb.com
+    - vduda@nuodb.com
+    - drivers@nuodb.com
 
 before_install:
   - wget http://download.nuohub.org/nuodb_${NUODB_VERSION}_amd64.deb --output-document=/var/tmp/nuodb.deb
