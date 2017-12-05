@@ -4,7 +4,6 @@
 
 #include <pthread.h>
 #include <stdint.h>
-#include <stdarg.h>
 #include <cstring>
 #include <string>
 #include "./exception.h"

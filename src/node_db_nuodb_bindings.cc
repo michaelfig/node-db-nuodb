@@ -37,6 +37,6 @@ extern "C" {
     node_db_nuodb::Query::Init(exports);
   }
 
-  NODE_MODULE(nuodb_bindings, init)
+  NODE_API_MODULE(nuodb_bindings, init)
 
 }

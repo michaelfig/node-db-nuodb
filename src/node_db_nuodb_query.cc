@@ -28,21 +28,21 @@
 
 #include "./node_db_nuodb_query.h"
 
-v8::Persistent<v8::FunctionTemplate> node_db_nuodb::Query::constructorTemplate;
+v8::Persistent<Napi::FunctionReference> node_db_nuodb::Query::constructorTemplate;
 
 void node_db_nuodb::Query::Init(v8::Handle<v8::Object> target) {
     v8::HandleScope scope;
 
-    v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(New);
+    Napi::FunctionReference t = Napi::FunctionReference::New(New);
 
-    constructorTemplate = v8::Persistent<v8::FunctionTemplate>::New(t);
-    constructorTemplate->InstanceTemplate()->SetInternalFieldCount(1);
+    constructorTemplate = v8::Persistent<Napi::FunctionReference>::New(t);
+
 
     node_db::Query::Init(target, constructorTemplate);
 
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
 
-    target->Set(v8::String::NewSymbol("Query"), constructorTemplate->GetFunction());
+    target.Set(v8::String::NewSymbol("Query"), constructorTemplate->GetFunction());
 }
 
 v8::Handle<v8::Value> node_db_nuodb::Query::New(const v8::Arguments& args) {

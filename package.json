@@ -1,46 +1,58 @@
 {
-    "name":"db-nuodb",
-    "description":"NuoDB database bindings for Node.JS",
-    "keywords":["database", "db", "native", "binding", "library", "plugin", "client", "nuodb"],
-    "homepage":"http://nuodb.github.com/node-db-nuodb/",
-    "version":"2.0.3",
+    "name": "db-nuodb",
+    "description": "NuoDB database bindings for Node.JS",
+    "keywords": [
+        "database",
+        "db",
+        "native",
+        "binding",
+        "library",
+        "plugin",
+        "client",
+        "nuodb"
+    ],
+    "homepage": "http://nuodb.github.com/node-db-nuodb/",
+    "version": "2.0.3",
     "author": "NuoDB, Inc.",
     "bin": {},
-    "engines":{
-	"npm": ">0.0.0",
-        "node":">=0.4.1" 
+    "engines": {
+        "npm": ">0.0.0",
+        "node": ">=0.4.1"
     },
-    "contributors":[
+    "contributors": [
         {
-            "name":"NuoDB, Inc.",
-            "email":"rbuck@nuodb.com"
+            "name": "NuoDB, Inc.",
+            "email": "rbuck@nuodb.com"
         }
     ],
-    "bugs":{
-        "url":"https://github.com/nuodb/node-db-nuodb/issues"
+    "bugs": {
+        "url": "https://github.com/nuodb/node-db-nuodb/issues"
     },
-    "licenses":[
+    "licenses": [
         {
-            "type":"BSD"
+            "type": "BSD"
         }
     ],
-    "repository":[
+    "repository": [
         {
-            "type":"git",
-            "url":"https://github.com/nuodb/node-db-nuodb.git"
+            "type": "git",
+            "url": "https://github.com/nuodb/node-db-nuodb.git"
         }
     ],
-    "main":"./db-nuodb",
-    "scripts":{
-        "install":"make build && make install",
-        "uninstall":"make clean",
-        "test":"make test",
-        "doc":"node-waf doc"
+    "main": "./db-nuodb",
+    "scripts": {
+        "install": "make build && make install",
+        "uninstall": "make clean",
+        "test": "make test",
+        "doc": "node-waf doc"
     },
-    "devDependencies":{
-        "nodeunit":"*",
-        "nodelint":"*",
-	"underscore": "*",
-	"node-gyp": "*"
+    "dependencies": {
+	"node-addon-api": "1.0.0"
+    },
+    "devDependencies": {
+        "node-gyp": "*",
+        "nodelint": "*",
+        "nodeunit": "^0.11.2",
+        "underscore": "^1.8.3"
     }
 }

@@ -44,8 +44,12 @@
                                                 "lib",
                                                 "<(nuodb_home)",
                                                 "<(nuodb_home)/lib64",
-                                                "<(nuodb_home)/include"
-                                        ]
+                                                "<(nuodb_home)/include",
+						"<!@(node -p \"require('node-addon-api').include\")"
+                                        ],
+					"dependencies": [
+						"<!(node -p \"require('node-addon-api').gyp\")"
+					]
                                 }],
                                 ["OS=='mac'", {
                                         "variables": {
@@ -56,6 +60,8 @@
                                                         "<(nuodb_home)/lib64"
                                                 ],
                                                 "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+						"CLANG_CXX_LIBRARY": "libc++",
+						"MACOSX_DEPLOYMENT_TARGET": "10.7",
                                                 "WARNING_CFLAGS!": [
                                                         "-Wall",
                                                         "-W",
@@ -74,8 +80,12 @@
                                                 "lib",
                                                 "<(nuodb_home)",
                                                 "<(nuodb_home)/lib64",
-                                                "<(nuodb_home)/include"
-                                        ]
+                                                "<(nuodb_home)/include",
+						"<!@(node -p \"require('node-addon-api').include\")"
+                                        ],
+					"dependencies": [
+						"<!(node -p \"require('node-addon-api').gyp\")"
+					]
                                 }],
                                 ["OS=='solaris'", {
                                         "variables": {
@@ -99,8 +109,12 @@
                                                 "lib",
                                                 "<(nuodb_home)",
                                                 "<(nuodb_home)/lib64",
-                                                "<(nuodb_home)/include"
-                                        ]
+                                                "<(nuodb_home)/include",
+						"<!@(node -p \"require('node-addon-api').include\")"
+                                        ],
+					"dependencies": [
+						"<!(node -p \"require('node-addon-api').gyp\")"
+					]
                                 }]
                         ]
                 }

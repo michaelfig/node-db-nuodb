@@ -41,9 +41,9 @@ namespace node_db_nuodb {
             NuoDB();
             ~NuoDB();
 
-            static v8::Persistent<v8::FunctionTemplate> constructorTemplate;
+            static v8::Persistent<Napi::FunctionReference> constructorTemplate;
             static v8::Handle<v8::Value> New(const v8::Arguments& args);
-            v8::Handle<v8::Value> set(const v8::Local<v8::Object> options);
+            v8::Handle<v8::Value> set(const Napi::Object options);
             v8::Persistent<v8::Object> createQuery() const;
     };
 }

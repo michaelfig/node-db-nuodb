@@ -1,13 +1,21 @@
 // Copyright 2011 Mariano Iglesias <mgiglesias@gmail.com>
 // Copyright 2011 Georg Wicherski <gw@oxff.net>
 #include "./query.h"
+using namespace Napi;
 
 bool node_db::Query::gmtDeltaLoaded = false;
 int node_db::Query::gmtDelta;
 
 uv_async_t node_db::Query::g_async;
 
-void node_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
+Napi::String v8StringFromUInt64(const Napi::Env &env, uint64_t num, std::ostringstream &reusableStream) {
+    reusableStream.clear();
+    reusableStream.seekp(0);
+    reusableStream << num << std::ends;
+    return String::New(env, reusableStream.str().c_str());
+}
+
+void node_db::Query::Init(Object target, Napi::FunctionReference constructorTemplate) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select", Select);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from", From);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join", Join);
@@ -25,23 +33,13 @@ void node_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::Func
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "execute", Execute);
 }
 
-node_db::Query::Query(): node_db::EventEmitter(),
-    connection(NULL), async(true), cast(true), bufferText(false), cbStart(NULL), cbExecute(NULL), cbFinish(NULL) {
+node_db::Query::Query(const CallbackInfo& args): node_db::EventEmitter(args),
+    connection(NULL), async(true), cast(true), bufferText(false) {
 }
 
 node_db::Query::~Query() {
-    for (std::vector< v8::Persistent<v8::Value> >::iterator iterator = this->values.begin(), end = this->values.end(); iterator != end; ++iterator) {
-        iterator->Dispose();
-    }
-
-    if (this->cbStart != NULL) {
-        node::cb_destroy(this->cbStart);
-    }
-    if (this->cbExecute != NULL) {
-        node::cb_destroy(this->cbExecute);
-    }
-    if (this->cbFinish != NULL) {
-        node::cb_destroy(this->cbFinish);
+  for (std::vector< Reference<Napi::Value> >::iterator iterator = this->values.begin(), end = this->values.end(); iterator != end; ++iterator) {
+        iterator->Reset();
     }
 }
 
@@ -49,13 +47,14 @@ void node_db::Query::setConnection(node_db::Connection* connection) {
     this->connection = connection;
 }
 
-v8::Handle<v8::Value> node_db::Query::Select(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Select(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     if (args.Length() > 0) {
-        if (args[0]->IsArray()) {
+        if (args[0].IsArray()) {
             ARG_CHECK_ARRAY(0, fields);
-        } else if (args[0]->IsObject()) {
+        } else if (args[0].IsObject()) {
             ARG_CHECK_OBJECT(0, fields);
         } else {
             ARG_CHECK_STRING(0, fields);
@@ -64,49 +63,50 @@ v8::Handle<v8::Value> node_db::Query::Select(const v8::Arguments& args) {
         ARG_CHECK_STRING(0, fields);
     }
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     query->sql << "SELECT ";
 
-    if (args[0]->IsArray()) {
-        v8::Local<v8::Array> fields = v8::Array::Cast(*args[0]);
-        if (fields->Length() == 0) {
+    if (args[0].IsArray()) {
+        Napi::Array fields = args[0].As<Napi::Array>();
+        if (fields.Length() == 0) {
             THROW_EXCEPTION("No fields specified in select")
         }
 
-        for (uint32_t i = 0, limiti = fields->Length(); i < limiti; i++) {
+        for (uint32_t i = 0, limiti = fields.Length(); i < limiti; i++) {
             if (i > 0) {
                 query->sql << ",";
             }
 
             try {
-                query->sql << query->fieldName(fields->Get(i));
+	      query->sql << query->fieldName(env, fields.Get(i));
             } catch(const node_db::Exception& exception) {
                 THROW_EXCEPTION(exception.what())
             }
         }
-    } else if (args[0]->IsObject()) {
+    } else if (args[0].IsObject()) {
         try {
-            query->sql << query->fieldName(args[0]);
+	  query->sql << query->fieldName(env, args[0]);
         } catch(const node_db::Exception& exception) {
             THROW_EXCEPTION(exception.what())
         }
     } else {
-        v8::String::Utf8Value fields(args[0]->ToString());
-        query->sql << *fields;
+        Napi::String fields(env, args[0].ToString());
+        query->sql << fields;
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::From(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::From(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     if (args.Length() > 0) {
-        if (args[0]->IsArray()) {
+        if (args[0].IsArray()) {
             ARG_CHECK_ARRAY(0, fields);
-        } else if (args[0]->IsObject()) {
+        } else if (args[0].IsObject()) {
             ARG_CHECK_OBJECT(0, tables);
         } else {
             ARG_CHECK_STRING(0, tables);
@@ -117,32 +117,33 @@ v8::Handle<v8::Value> node_db::Query::From(const v8::Arguments& args) {
 
     ARG_CHECK_OPTIONAL_BOOL(1, escape);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (args.Length() > 1) {
-        escape = args[1]->IsTrue();
+        escape = args[1].ToBoolean();
     }
 
     query->sql << " FROM ";
 
     try {
-        query->sql << query->tableName(args[0], escape);
+      query->sql << query->tableName(env, args[0], escape);
     } catch(const node_db::Exception& exception) {
         THROW_EXCEPTION(exception.what());
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Join(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Join(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     ARG_CHECK_OBJECT(0, join);
     ARG_CHECK_OPTIONAL_ARRAY(1, values);
 
-    v8::Local<v8::Object> join = args[0]->ToObject();
+    Napi::Object join = args[0].ToObject();
 
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(join, type);
     ARG_CHECK_OBJECT_ATTR_STRING(join, table);
@@ -150,80 +151,84 @@ v8::Handle<v8::Value> node_db::Query::Join(const v8::Arguments& args) {
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(join, conditions);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_BOOL(join, escape);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     std::string type = "INNER";
     bool escape = true;
 
-    if (join->Has(type_key)) {
-        v8::String::Utf8Value currentType(join->Get(type_key)->ToString());
-        type = *currentType;
+    if (join.Has(type_key)) {
+        Napi::String currentType(env, join.Get(type_key).ToString());
+        type = currentType;
         std::transform(type.begin(), type.end(), type.begin(), toupper);
     }
 
-    if (join->Has(escape_key)) {
-        escape = join->Get(escape_key)->IsTrue();
+    if (join.Has(escape_key)) {
+        escape = join.Get(escape_key).ToBoolean();
     }
 
-    v8::String::Utf8Value table(join->Get(table_key)->ToString());
+    Napi::String table(env, join.Get(table_key).ToString());
 
     query->sql << " " << type << " JOIN ";
-    query->sql << (escape ? query->connection->escapeName(*table) : *table);
+    query->sql << (escape ? query->connection->escapeName(table) : table);
 
-    if (join->Has(alias_key)) {
-        v8::String::Utf8Value alias(join->Get(alias_key)->ToString());
+    if (join.Has(alias_key)) {
+        Napi::String alias(env, join.Get(alias_key).ToString());
         query->sql << " AS ";
-        query->sql << (escape ? query->connection->escapeName(*alias) : *alias);
+        query->sql << (escape ? query->connection->escapeName(alias) : alias);
     }
 
-    if (join->Has(conditions_key)) {
-        v8::String::Utf8Value conditions(join->Get(conditions_key)->ToObject());
-        std::string currentConditions = *conditions;
+    if (join.Has(conditions_key)) {
+        Napi::String conditions(env, join.Get(conditions_key).ToObject());
+        std::string currentConditions = conditions;
         if (args.Length() > 1) {
-            v8::Local<v8::Array> currentValues = v8::Array::Cast(*args[1]);
-            for (uint32_t i = 0, limiti = currentValues->Length(); i < limiti; i++) {
-                query->values.push_back(v8::Persistent<v8::Value>::New(currentValues->Get(i)));
+            Napi::Array currentValues = args[1].As<Napi::Array>();
+            for (uint32_t i = 0, limiti = currentValues.Length(); i < limiti; i++) {
+	      query->values.push_back(Persistent(currentValues.Get(i)));
             }
         }
 
         query->sql << " ON (" << currentConditions << ")";
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Where(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Where(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
-    return scope.Close(query->addCondition(args, "WHERE"));
+    return scope.Escape(query->addCondition(args, "WHERE"));
 }
 
-v8::Handle<v8::Value> node_db::Query::And(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::And(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
-    return scope.Close(query->addCondition(args, "AND"));
+    return scope.Escape(query->addCondition(args, "AND"));
 }
 
-v8::Handle<v8::Value> node_db::Query::Or(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Or(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
-    return scope.Close(query->addCondition(args, "OR"));
+    return scope.Escape(query->addCondition(args, "OR"));
 }
 
-v8::Handle<v8::Value> node_db::Query::Order(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Order(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    if (args.Length() > 0 && args[0]->IsObject()) {
+    if (args.Length() > 0 && args[0].IsObject()) {
         ARG_CHECK_OBJECT(0, fields);
     } else {
         ARG_CHECK_STRING(0, fields);
@@ -231,79 +236,80 @@ v8::Handle<v8::Value> node_db::Query::Order(const v8::Arguments& args) {
 
     ARG_CHECK_OPTIONAL_BOOL(1, escape);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (args.Length() > 1) {
-        escape = args[1]->IsTrue();
+        escape = args[1].ToBoolean();
     }
 
     query->sql << " ORDER BY ";
 
-    if (args[0]->IsObject()) {
-        v8::Local<v8::Object> fields = args[0]->ToObject();
-        v8::Local<v8::Array> properties = fields->GetPropertyNames();
-        if (properties->Length() == 0) {
+    if (args[0].IsObject()) {
+        Napi::Object fields = args[0].ToObject();
+        Napi::Array properties = fields.GetPropertyNames();
+        if (properties.Length() == 0) {
             THROW_EXCEPTION("Non empty objects should be used for fields in order");
         }
 
-        for (uint32_t i = 0, limiti = properties->Length(); i < limiti; i++) {
-            v8::Local<v8::Value> propertyName = properties->Get(i);
-            v8::String::Utf8Value fieldName(propertyName);
-            v8::Local<v8::Value> currentValue = fields->Get(propertyName);
+        for (uint32_t i = 0, limiti = properties.Length(); i < limiti; i++) {
+            Napi::Value propertyName = properties.Get(i);
+            Napi::String fieldName(env, propertyName);
+            Napi::Value currentValue = fields.Get(propertyName);
 
             if (i > 0) {
                 query->sql << ",";
             }
 
             bool innerEscape = escape;
-            v8::Local<v8::Value> order;
-            if (currentValue->IsObject()) {
-                v8::Local<v8::Object> currentObject = currentValue->ToObject();
-                v8::Local<v8::String> escapeKey = v8::String::New("escape");
-                v8::Local<v8::String> orderKey = v8::String::New("order");
-                v8::Local<v8::Value> optionValue;
+            Napi::Value order;
+            if (currentValue.IsObject()) {
+                Napi::Object currentObject = currentValue.ToObject();
+                Napi::String escapeKey = String::New(env, "escape");
+                Napi::String orderKey = String::New(env, "order");
+                Napi::Value optionValue;
 
-                if (!currentObject->Has(orderKey)) {
+                if (!currentObject.Has(orderKey)) {
                     THROW_EXCEPTION("The \"order\" option for the order field object must be specified");
                 }
 
-                order = currentObject->Get(orderKey);
+                order = currentObject.Get(orderKey);
 
-                if (currentObject->Has(escapeKey)) {
-                    optionValue = currentObject->Get(escapeKey);
-                    if (!optionValue->IsBoolean()) {
+                if (currentObject.Has(escapeKey)) {
+                    optionValue = currentObject.Get(escapeKey);
+                    if (!optionValue.IsBoolean()) {
                         THROW_EXCEPTION("Specify a valid boolean value for the \"escape\" option in the order field object");
                     }
-                    innerEscape = optionValue->IsTrue();
+                    innerEscape = optionValue.ToBoolean();
                 }
             } else {
                 order = currentValue;
             }
 
-            query->sql << (innerEscape ? query->connection->escapeName(*fieldName) : *fieldName);
+            query->sql << (innerEscape ? query->connection->escapeName(fieldName) : fieldName);
             query->sql << " ";
 
-            if (order->IsBoolean()) {
-                query->sql << (order->IsTrue() ? "ASC" : "DESC");
-            } else if (order->IsString()) {
-                v8::String::Utf8Value currentOrder(order->ToString());
-                query->sql << *currentOrder;
+            if (order.IsBoolean()) {
+                query->sql << (order.ToBoolean() ? "ASC" : "DESC");
+            } else if (order.IsString()) {
+                Napi::String currentOrder(env, order.ToString());
+                query->sql << currentOrder;
             } else {
                 THROW_EXCEPTION("Invalid value specified for \"order\" property in order field");
             }
         }
     } else {
-        v8::String::Utf8Value sql(args[0]->ToString());
-        query->sql << *sql;
+        Napi::String sql(env, args[0].ToString());
+        query->sql << sql;
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Limit(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Limit(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     if (args.Length() > 1) {
         ARG_CHECK_UINT32(0, offset);
@@ -312,59 +318,61 @@ v8::Handle<v8::Value> node_db::Query::Limit(const v8::Arguments& args) {
         ARG_CHECK_UINT32(0, rows);
     }
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     query->sql << " LIMIT ";
     if (args.Length() > 1) {
-        query->sql << args[0]->ToInt32()->Value();
+        query->sql << args[0].ToNumber().Int32Value();
         query->sql << ",";
-        query->sql << args[1]->ToInt32()->Value();
+        query->sql << args[1].ToNumber().Int32Value();
     } else {
-        query->sql << args[0]->ToInt32()->Value();
+        query->sql << args[0].ToNumber().Int32Value();
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Add(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Add(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     node_db::Query* innerQuery = NULL;
 
-    if (args.Length() > 0 && args[0]->IsObject()) {
-        v8::Local<v8::Object> object = args[0]->ToObject();
-        v8::Handle<v8::String> key = v8::String::New("sql");
-        if (!object->Has(key) || !object->Get(key)->IsFunction()) {
+    if (args.Length() > 0 && args[0].IsObject()) {
+        Napi::Object object = args[0].ToObject();
+        String key = String::New(env, "sql");
+        if (!object.Has(key) || !object.Get(key).IsFunction()) {
             ARG_CHECK_STRING(0, sql);
         }
 
-        innerQuery = node::ObjectWrap::Unwrap<node_db::Query>(object);
+        innerQuery = reinterpret_cast<node_db::Query*>(Unwrap(object));
         assert(innerQuery);
     } else {
         ARG_CHECK_STRING(0, sql);
     }
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     if (innerQuery != NULL) {
         query->sql << innerQuery->sql.str();
     } else {
-        v8::String::Utf8Value sql(args[0]->ToString());
-        query->sql << *sql;
+        Napi::String sql(env, args[0].ToString());
+        query->sql << sql;
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Delete(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Delete(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     if (args.Length() > 0) {
-        if (args[0]->IsArray()) {
+        if (args[0].IsArray()) {
             ARG_CHECK_ARRAY(0, tables);
-        } else if (args[0]->IsObject()) {
+        } else if (args[0].IsObject()) {
             ARG_CHECK_OBJECT(0, tables);
         } else {
             ARG_CHECK_STRING(0, tables);
@@ -372,29 +380,30 @@ v8::Handle<v8::Value> node_db::Query::Delete(const v8::Arguments& args) {
         ARG_CHECK_OPTIONAL_BOOL(1, escape);
     }
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (args.Length() > 1) {
-        escape = args[1]->IsTrue();
+        escape = args[1].ToBoolean();
     }
 
     query->sql << "DELETE";
 
     if (args.Length() > 0) {
         try {
-            query->sql << " " << query->tableName(args[0], escape);
+	  query->sql << " " << query->tableName(env, args[0], escape);
         } catch(const node_db::Exception& exception) {
             THROW_EXCEPTION(exception.what());
         }
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Insert(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
     uint32_t argsLength = args.Length();
 
     int fieldsIndex = -1, valuesIndex = -1;
@@ -403,16 +412,16 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
         ARG_CHECK_STRING(0, table);
 
         if (argsLength > 2) {
-            if (args[1]->IsArray()) {
+            if (args[1].IsArray()) {
                 ARG_CHECK_ARRAY(1, fields);
-            } else if (args[1]->IsObject()) {
+            } else if (args[1].IsObject()) {
                 ARG_CHECK_OBJECT(1, fields);
-            } else if (!args[1]->IsFalse()) {
+            } else if (args[1].ToBoolean().Value()) {
                 ARG_CHECK_STRING(1, fields);
             }
             fieldsIndex = 1;
 
-            if (!args[2]->IsFalse()) {
+            if (args[2].ToBoolean().Value()) {
                 valuesIndex = 2;
                 ARG_CHECK_ARRAY(2, values);
             }
@@ -426,16 +435,16 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
         ARG_CHECK_STRING(0, table);
     }
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (argsLength > 3) {
-        escape = args[3]->IsTrue();
+        escape = args[3].ToBoolean();
     }
 
     try {
-        query->sql << "INSERT INTO " << query->tableName(args[0], escape);
+      query->sql << "INSERT INTO " << query->tableName(env, args[0], escape);
     } catch(const node_db::Exception& exception) {
         THROW_EXCEPTION(exception.what());
     }
@@ -443,28 +452,28 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
     if (argsLength > 1) {
         if (fieldsIndex != -1) {
             query->sql << "(";
-            if (args[fieldsIndex]->IsArray()) {
-                v8::Local<v8::Array> fields = v8::Array::Cast(*args[fieldsIndex]);
-                if (fields->Length() == 0) {
+            if (args[fieldsIndex].IsArray()) {
+                Napi::Array fields = args[fieldsIndex].As<Napi::Array>();
+                if (fields.Length() == 0) {
                     THROW_EXCEPTION("No fields specified in insert")
                 }
 
-                for (uint32_t i = 0, limiti = fields->Length(); i < limiti; i++) {
+                for (uint32_t i = 0, limiti = fields.Length(); i < limiti; i++) {
                     if (i > 0) {
                         query->sql << ",";
                     }
 
                     try {
-		        v8::String::Utf8Value fieldName(fields->Get(i));
-                        //query->fieldName(fields->Get(i));
-		        query->sql << *fieldName;
+		        Napi::String fieldName(env, fields.Get(i));
+                        //query->fieldName(env, fields.Get(i));
+		        query->sql << fieldName;
                     } catch(const node_db::Exception& exception) {
                         THROW_EXCEPTION(exception.what())
                     }
                 }
             } else {
-                v8::String::Utf8Value fields(args[fieldsIndex]->ToString());
-                query->sql << *fields;
+                Napi::String fields(env, args[fieldsIndex].ToString());
+                query->sql << fields;
             }
             query->sql << ")";
         }
@@ -472,10 +481,10 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
         query->sql << " ";
 
         if (valuesIndex != -1) {
-            v8::Local<v8::Array> values = v8::Array::Cast(*args[valuesIndex]);
-            uint32_t valuesLength = values->Length();
+            Napi::Array values = args[valuesIndex].As<Napi::Array>();
+            uint32_t valuesLength = values.Length();
             if (valuesLength > 0) {
-                bool multipleRecords = values->Get(0)->IsArray();
+	      bool multipleRecords = values.Get((uint32_t)0).IsArray();
 
                 query->sql << "VALUES ";
                 if (!multipleRecords) {
@@ -486,7 +495,7 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
                     if (i > 0) {
                         query->sql << ",";
                     }
-                    query->sql << query->value(values->Get(i));
+                    query->sql << query->value(values.Get(i));
                 }
 
                 if (!multipleRecords) {
@@ -498,16 +507,17 @@ v8::Handle<v8::Value> node_db::Query::Insert(const v8::Arguments& args) {
         query->sql << " ";
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Update(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Update(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     if (args.Length() > 0) {
-        if (args[0]->IsArray()) {
+        if (args[0].IsArray()) {
             ARG_CHECK_ARRAY(0, tables);
-        } else if (args[0]->IsObject()) {
+        } else if (args[0].IsObject()) {
             ARG_CHECK_OBJECT(0, tables);
         } else {
             ARG_CHECK_STRING(0, tables);
@@ -518,83 +528,86 @@ v8::Handle<v8::Value> node_db::Query::Update(const v8::Arguments& args) {
 
     ARG_CHECK_OPTIONAL_BOOL(1, escape);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (args.Length() > 1) {
-        escape = args[1]->IsTrue();
+        escape = args[1].ToBoolean();
     }
 
     query->sql << "UPDATE ";
 
     try {
-        query->sql << query->tableName(args[0], escape);
+      query->sql << query->tableName(env, args[0], escape);
     } catch(const node_db::Exception& exception) {
         THROW_EXCEPTION(exception.what());
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Set(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Set(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
     ARG_CHECK_OBJECT(0, values);
     ARG_CHECK_OPTIONAL_BOOL(1, escape);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     bool escape = true;
     if (args.Length() > 1) {
-        escape = args[1]->IsTrue();
+        escape = args[1].ToBoolean();
     }
 
     query->sql << " SET ";
 
-    v8::Local<v8::Object> values = args[0]->ToObject();
-    v8::Local<v8::Array> valueProperties = values->GetPropertyNames();
-    if (valueProperties->Length() == 0) {
+    Napi::Object values = args[0].ToObject();
+    Napi::Array valueProperties = values.GetPropertyNames();
+    if (valueProperties.Length() == 0) {
         THROW_EXCEPTION("Non empty objects should be used for values in set");
     }
 
-    for (uint32_t j = 0, limitj = valueProperties->Length(); j < limitj; j++) {
-        v8::Local<v8::Value> propertyName = valueProperties->Get(j);
-        v8::String::Utf8Value fieldName(propertyName);
-        v8::Local<v8::Value> currentValue = values->Get(propertyName);
+    for (uint32_t j = 0, limitj = valueProperties.Length(); j < limitj; j++) {
+        Napi::Value propertyName = valueProperties.Get(j);
+        Napi::String fieldName(env, propertyName);
+        Napi::Value currentValue = values.Get(propertyName);
 
         if (j > 0) {
             query->sql << ",";
         }
 
-        query->sql << (escape ? query->connection->escapeName(*fieldName) : *fieldName);
+        query->sql << (escape ? query->connection->escapeName(fieldName) : fieldName);
         query->sql << "=";
         query->sql << query->value(currentValue);
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db::Query::Sql(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Sql(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
-    return scope.Close(v8::String::New(query->sql.str().c_str()));
+    return scope.Escape(String::New(env, query->sql.str().c_str()));
 }
 
-v8::Handle<v8::Value> node_db::Query::Execute(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db::Query::Execute(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(args.This());
+    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     if (args.Length() > 0) {
-        v8::Handle<v8::Value> set = query->set(args);
+        Napi::Value set = query->set(args);
         if (!set.IsEmpty()) {
-            return scope.Close(set);
+            return scope.Escape(set);
         }
     }
 
@@ -606,22 +619,23 @@ v8::Handle<v8::Value> node_db::Query::Execute(const v8::Arguments& args) {
         THROW_EXCEPTION(exception.what())
     }
 
-    if (query->cbStart != NULL && !query->cbStart->IsEmpty()) {
-        v8::Local<v8::Value> argv[1];
-        argv[0] = v8::String::New(sql.c_str());
+    if (!query->cbStart.IsEmpty()) {
+        Napi::Value argv[1];
+        argv[0] = String::New(env, sql.c_str());
 
-        v8::TryCatch tryCatch;
-        v8::Handle<v8::Value> result = (*(query->cbStart))->Call(v8::Context::GetCurrent()->Global(), 1, argv);
-        if (tryCatch.HasCaught()) {
-            node::FatalException(tryCatch);
-        }
+        Napi::Value result;
+	try {
+	  result = query->cbStart.Call(env.Global(), {argv[0]});
+	} catch (const Napi::Error& e) {
+	  e.Fatal("node_db::Query::Execute", "Error in start callback");
+	}
 
-        if (!result->IsUndefined()) {
-            if (result->IsFalse()) {
-                return scope.Close(v8::Undefined());
-            } else if (result->IsString()) {
-                v8::String::Utf8Value modifiedQuery(result->ToString());
-                sql = *modifiedQuery;
+        if (!result.IsUndefined()) {
+            if (!result.ToBoolean()) {
+                return scope.Escape(env.Undefined());
+            } else if (result.IsString()) {
+                Napi::String modifiedQuery(env, result.ToString());
+                sql = modifiedQuery;
             }
         }
     }
@@ -639,7 +653,7 @@ v8::Handle<v8::Value> node_db::Query::Execute(const v8::Arguments& args) {
     query->sql.clear();
     query->sql << sql;
 
-    request->context = v8::Persistent<v8::Object>::New(args.This());
+    request->context = ObjectReference::New(args.This().As<Object>());
     request->query = query;
     request->buffered = false;
     request->result = NULL;
@@ -653,17 +667,13 @@ v8::Handle<v8::Value> node_db::Query::Execute(const v8::Arguments& args) {
         req->data = request;
         uv_queue_work(uv_default_loop(), req, uvExecute, (uv_after_work_cb)uvExecuteFinished);
 
-#if NODE_VERSION_AT_LEAST(0, 7, 9)
         uv_ref((uv_handle_t *)&g_async);
-#else
-        uv_ref(uv_default_loop());
-#endif
 
     } else {
         request->query->executeAsync(request);
     }
 
-    return scope.Close(v8::Undefined());
+    return scope.Escape(env.Undefined());
 }
 
 void node_db::Query::uvExecute(uv_work_t* uvRequest) {
@@ -737,96 +747,99 @@ void node_db::Query::uvExecute(uv_work_t* uvRequest) {
     }
 }
 
-void node_db::Query::uvExecuteFinished(uv_work_t* uvRequest) {
-    v8::HandleScope scope;
-
+void node_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
     execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
     assert(request);
 
+    Napi::Env env = request->context.Env();
+    EscapableHandleScope scope(env);
+
     if (request->error == NULL && request->result != NULL) {
-        v8::Local<v8::Value> argv[3];
-        argv[0] = v8::Local<v8::Value>::New(v8::Null());
+        Napi::Value argv[3];
+        argv[0] = env.Null();
 
         bool isEmpty = request->result->isEmpty();
         if (!isEmpty) {
             assert(request->rows);
 
             size_t totalRows = request->rows->size();
-            v8::Local<v8::Array> rows = v8::Array::New(totalRows);
+            Napi::Array rows = Array::New(env, totalRows);
 
             uint64_t index = 0;
+            std::ostringstream reusableStream;
             for (std::vector<row_t*>::iterator iterator = request->rows->begin(), end = request->rows->end(); iterator != end; ++iterator, index++) {
                 row_t* currentRow = *iterator;
-                v8::Local<v8::Object> row = request->query->row(request->result, currentRow);
-                v8::Local<v8::Value> eachArgv[3];
+                Napi::Object row = request->query->row(env, request->result, currentRow);
+                Napi::Value eachArgv[3];
 
                 eachArgv[0] = row;
-                eachArgv[1] = v8::Number::New(index);
-                eachArgv[2] = v8::Local<v8::Value>::New((index == totalRows - 1) ? v8::True() : v8::False());
+                eachArgv[1] = v8StringFromUInt64(env, index, reusableStream);
+                eachArgv[2] = Boolean::New(env, (index == totalRows - 1));
 
                 request->query->Emit("each", 3, eachArgv);
 
-                rows->Set(index, row);
+                rows.Set(index, row);
             }
 
-            v8::Local<v8::Array> columns = v8::Array::New(request->columnCount);
+            Napi::Array columns = Array::New(env, request->columnCount);
             for (uint16_t j = 0; j < request->columnCount; j++) {
                 node_db::Result::Column *currentColumn = request->result->column(j);
 
-                v8::Local<v8::Object> column = v8::Object::New();
-                column->Set(v8::String::New("name"), v8::String::New(currentColumn->getName().c_str()));
-                column->Set(v8::String::New("type"), NODE_CONSTANT(currentColumn->getType()));
+                Napi::Object column = Object::New(env);
+                column.Set("name", String::New(env, currentColumn->getName().c_str()));
+                column.Set("type", NODE_CONSTANT(currentColumn->getType()));
 
-                columns->Set(j, column);
+                columns.Set(j, column);
             }
 
             argv[1] = rows;
             argv[2] = columns;
         } else {
-            v8::Local<v8::Object> result = v8::Object::New();
-            result->Set(v8::String::New("id"), v8::Number::New(request->result->insertId()));
-            result->Set(v8::String::New("affected"), v8::Number::New(request->result->affectedCount()));
-            result->Set(v8::String::New("warning"), v8::Number::New(request->result->warningCount()));
+            Napi::Object result = Object::New(env);
+            std::ostringstream reusableStream;
+            result.Set("id", v8StringFromUInt64(env, request->result->insertId(), reusableStream));
+            result.Set("affected", v8StringFromUInt64(env, request->result->affectedCount(), reusableStream));
+            result.Set("warning", v8StringFromUInt64(env, request->result->warningCount(), reusableStream));
             argv[1] = result;
         }
 
         request->query->Emit("success", !isEmpty ? 2 : 1, &argv[1]);
 
-        if (request->query->cbExecute != NULL && !request->query->cbExecute->IsEmpty()) {
-            v8::TryCatch tryCatch;
-            (*(request->query->cbExecute))->Call(request->context, !isEmpty ? 3 : 2, argv);
-            if (tryCatch.HasCaught()) {
-                node::FatalException(tryCatch);
-            }
+        if (!request->query->cbExecute.IsEmpty()) {
+	  try {
+	    if (isEmpty) {
+	      request->query->cbExecute.Call(request->context.Value(), {argv[0], argv[1]});
+	    } else {
+	      request->query->cbExecute.Call(request->context.Value(), {argv[0], argv[1], argv[2]});
+	    }
+	  } catch (const Napi::Error& e) {
+	    e.Fatal("node_db::Query::uvExecuteFinished", "Error in execute callback");
+	  }
         }
     } else {
-        v8::Local<v8::Value> argv[1];
-        argv[0] = v8::String::New(request->error != NULL ? request->error->c_str() : "(unknown error)");
+        Napi::Value argv[1];
+        argv[0] = String::New(env, request->error != NULL ? request->error->c_str() : "(unknown error)");
 
         request->query->Emit("error", 1, argv);
 
-        if (request->query->cbExecute != NULL && !request->query->cbExecute->IsEmpty()) {
-            v8::TryCatch tryCatch;
-            (*(request->query->cbExecute))->Call(request->context, 1, argv);
-            if (tryCatch.HasCaught()) {
-                node::FatalException(tryCatch);
-            }
-        }
+        if (!request->query->cbExecute.IsEmpty()) {
+	  try {
+            request->query->cbExecute.Call(request->context.Value(), {argv[0]});
+	  } catch (const Napi::Error& e) {
+	    e.Fatal("node_db::Query::uvExecuteFinished", "Error in execute callback");
+	  }
+	}
     }
 
-    if (request->query->cbFinish != NULL && !request->query->cbFinish->IsEmpty()) {
-        v8::TryCatch tryCatch;
-        (*(request->query->cbFinish))->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
-        if (tryCatch.HasCaught()) {
-            node::FatalException(tryCatch);
-        }
+    if (!request->query->cbFinish.IsEmpty()) {
+      try {
+        request->query->cbFinish.Call(env.Global(), {});
+      } catch (const Napi::Error& e) {
+	e.Fatal("node_db::Query::uvExecuteFinished", "Error in finish callback");
+      }
     }
 
-#if NODE_VERSION_AT_LEAST(0, 7, 9)
     uv_unref((uv_handle_t *)&g_async);
-#else
-    uv_unref(uv_default_loop());
-#endif
 
     request->query->Unref();
 
@@ -834,6 +847,7 @@ void node_db::Query::uvExecuteFinished(uv_work_t* uvRequest) {
 }
 
 void node_db::Query::executeAsync(execute_request_t* request) {
+    Napi::Env env = request->context.Env();
     bool freeAll = true;
     try {
         this->connection->lock();
@@ -841,48 +855,49 @@ void node_db::Query::executeAsync(execute_request_t* request) {
         this->connection->unlock();
 
         if (request->result != NULL) {
-            v8::Local<v8::Value> argv[3];
-            argv[0] = v8::Local<v8::Value>::New(v8::Null());
+            Napi::Value argv[3];
+            argv[0] = env.Null();
 
             bool isEmpty = request->result->isEmpty();
             if (!isEmpty) {
                 request->columnCount = request->result->columnCount();
 
-                v8::Local<v8::Array> columns = v8::Array::New(request->columnCount);
-                v8::Local<v8::Array> rows;
+                Napi::Array columns = Array::New(env, request->columnCount);
+                Napi::Array rows;
                 try {
-                    rows = v8::Array::New(request->result->count());
+		  rows = Array::New(env, request->result->count());
                 } catch(const node_db::Exception& exception) {
-                    rows = v8::Array::New();
+		  rows = Array::New(env);
                 }
 
                 for (uint16_t i = 0; i < request->columnCount; i++) {
                     node_db::Result::Column *currentColumn = request->result->column(i);
 
-                    v8::Local<v8::Object> column = v8::Object::New();
-                    column->Set(v8::String::New("name"), v8::String::New(currentColumn->getName().c_str()));
-                    column->Set(v8::String::New("type"), NODE_CONSTANT(currentColumn->getType()));
+                    Napi::Object column = Object::New(env);
+                    column.Set("name", String::New(env, currentColumn->getName().c_str()));
+                    column.Set("type", NODE_CONSTANT(currentColumn->getType()));
 
-                    columns->Set(i, column);
+                    columns.Set(i, column);
                 }
 
                 row_t row;
                 uint64_t index = 0;
+                std::ostringstream reusableStream;
 
                 while (request->result->hasNext()) {
                     row.columnLengths = (unsigned long*) request->result->columnLengths();
                     row.columns = reinterpret_cast<char**>(request->result->next());
 
-                    v8::Local<v8::Object> jsRow = this->row(request->result, &row);
-                    v8::Local<v8::Value> eachArgv[3];
+                    Napi::Object jsRow = this->row(env, request->result, &row);
+                    Napi::Value eachArgv[3];
 
                     eachArgv[0] = jsRow;
-                    eachArgv[1] = v8::Number::New(index);
-                    eachArgv[2] = v8::Local<v8::Value>::New(request->result->hasNext() ? v8::True() : v8::False());
+                    eachArgv[1] = v8StringFromUInt64(env, index, reusableStream);
+                    eachArgv[2] = Boolean::New(env, request->result->hasNext());
 
                     this->Emit("each", 3, eachArgv);
 
-                    rows->Set(index++, jsRow);
+                    rows.Set(index++, jsRow);
                 }
 
                 if (!request->result->isBuffered()) {
@@ -892,37 +907,42 @@ void node_db::Query::executeAsync(execute_request_t* request) {
                 argv[1] = rows;
                 argv[2] = columns;
             } else {
-                v8::Local<v8::Object> result = v8::Object::New();
-                result->Set(v8::String::New("id"), v8::Number::New(request->result->insertId()));
-                result->Set(v8::String::New("affected"), v8::Number::New(request->result->affectedCount()));
-                result->Set(v8::String::New("warning"), v8::Number::New(request->result->warningCount()));
+                Napi::Object result = Object::New(env);
+                std::ostringstream reusableStream;
+                result.Set("id", v8StringFromUInt64(env, request->result->insertId(), reusableStream));
+                result.Set("affected", v8StringFromUInt64(env, request->result->affectedCount(), reusableStream));
+                result.Set("warning", v8StringFromUInt64(env, request->result->warningCount(), reusableStream));
                 argv[1] = result;
             }
 
             this->Emit("success", !isEmpty ? 2 : 1, &argv[1]);
 
-            if (this->cbExecute != NULL && !this->cbExecute->IsEmpty()) {
-                v8::TryCatch tryCatch;
-                (*(this->cbExecute))->Call(request->context, !isEmpty ? 3 : 2, argv);
-                if (tryCatch.HasCaught()) {
-                    node::FatalException(tryCatch);
-                }
+            if (!this->cbExecute.IsEmpty()) {
+	      try {
+		if (isEmpty) {
+		  this->cbExecute.Call(request->context.Value(), {argv[0], argv[1]});
+		} else {
+		  this->cbExecute.Call(request->context.Value(), {argv[0], argv[1], argv[2]});
+		}
+	      } catch (const Napi::Error& e) {
+		e.Fatal("node_db::Query::executeAsync", "Error in execute callback");
+	      }
             }
         }
     } catch(const node_db::Exception& exception) {
         this->connection->unlock();
 
-        v8::Local<v8::Value> argv[1];
-        argv[0] = v8::String::New(exception.what());
+        Napi::Value argv[1];
+        argv[0] = String::New(env, exception.what());
 
         this->Emit("error", 1, argv);
 
-        if (this->cbExecute != NULL && !this->cbExecute->IsEmpty()) {
-            v8::TryCatch tryCatch;
-            (*(this->cbExecute))->Call(request->context, 1, argv);
-            if (tryCatch.HasCaught()) {
-                node::FatalException(tryCatch);
-            }
+        if (!this->cbExecute.IsEmpty()) {
+	  try {
+	    this->cbExecute.Call(request->context.Value(), {argv[0]});
+	  } catch (const Napi::Error& e) {
+	    e.Fatal("node_db::Query::executeAsync", "Error in execute callback");
+	  }
         }
 
         freeAll = false;
@@ -963,15 +983,17 @@ void node_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
             delete request->result;
         }
 
-        request->context.Dispose();
+        request->context.Reset();
 
         delete request;
     }
 }
 
-v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
+Napi::Value node_db::Query::set(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+
     if (args.Length() == 0) {
-        return v8::Handle<v8::Value>();
+        return Napi::Value();
     }
 
     int queryIndex = -1, optionsIndex = -1, valuesIndex = -1, callbackIndex = -1;
@@ -988,9 +1010,9 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
     } else if (args.Length() == 3) {
         ARG_CHECK_STRING(0, query);
         queryIndex = 0;
-        if (args[2]->IsFunction()) {
+        if (args[2].IsFunction()) {
             ARG_CHECK_FUNCTION(2, callback);
-            if (args[1]->IsArray()) {
+            if (args[1].IsArray()) {
                 ARG_CHECK_ARRAY(1, values);
                 valuesIndex = 1;
             } else {
@@ -1006,10 +1028,10 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
             optionsIndex = 2;
         }
     } else if (args.Length() == 2) {
-        if (args[1]->IsFunction()) {
+        if (args[1].IsFunction()) {
             ARG_CHECK_FUNCTION(1, callback);
             callbackIndex = 1;
-        } else if (args[1]->IsArray()) {
+        } else if (args[1].IsArray()) {
             ARG_CHECK_ARRAY(1, values);
             valuesIndex = 1;
         } else {
@@ -1017,7 +1039,7 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
             optionsIndex = 1;
         }
 
-        if (args[0]->IsFunction() && callbackIndex == -1) {
+        if (args[0].IsFunction() && callbackIndex == -1) {
             ARG_CHECK_FUNCTION(0, callback);
             callbackIndex = 0;
         } else {
@@ -1025,13 +1047,13 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
             queryIndex = 0;
         }
     } else if (args.Length() == 1) {
-        if (args[0]->IsString()) {
+        if (args[0].IsString()) {
             ARG_CHECK_STRING(0, query);
             queryIndex = 0;
-        } else if (args[0]->IsFunction()) {
+        } else if (args[0].IsFunction()) {
             ARG_CHECK_FUNCTION(0, callback);
             callbackIndex = 0;
-        } else if (args[0]->IsArray()) {
+        } else if (args[0].IsArray()) {
             ARG_CHECK_ARRAY(0, values);
             valuesIndex = 0;
         } else {
@@ -1041,14 +1063,14 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
     }
 
     if (queryIndex >= 0) {
-        v8::String::Utf8Value initialSql(args[queryIndex]->ToString());
+        Napi::String initialSql(env, args[queryIndex].ToString());
         this->sql.str("");
         this->sql.clear();
-        this->sql << *initialSql;
+        this->sql << initialSql;
     }
 
     if (optionsIndex >= 0) {
-        v8::Local<v8::Object> options = args[optionsIndex]->ToObject();
+        Napi::Object options = args[optionsIndex].ToObject();
 
         ARG_CHECK_OBJECT_ATTR_OPTIONAL_BOOL(options, async);
         ARG_CHECK_OBJECT_ATTR_OPTIONAL_BOOL(options, cast);
@@ -1056,110 +1078,104 @@ v8::Handle<v8::Value> node_db::Query::set(const v8::Arguments& args) {
         ARG_CHECK_OBJECT_ATTR_OPTIONAL_FUNCTION(options, start);
         ARG_CHECK_OBJECT_ATTR_OPTIONAL_FUNCTION(options, finish);
 
-        if (options->Has(async_key)) {
-            this->async = options->Get(async_key)->IsTrue();
+        if (options.Has(async_key)) {
+            this->async = options.Get(async_key).ToBoolean();
         }
 
-        if (options->Has(cast_key)) {
-            this->cast = options->Get(cast_key)->IsTrue();
+        if (options.Has(cast_key)) {
+            this->cast = options.Get(cast_key).ToBoolean();
         }
 
-        if (options->Has(bufferText_key)) {
-            this->bufferText = options->Get(bufferText_key)->IsTrue();
+        if (options.Has(bufferText_key)) {
+            this->bufferText = options.Get(bufferText_key).ToBoolean();
         }
 
-        if (options->Has(start_key)) {
-            if (this->cbStart != NULL) {
-                node::cb_destroy(this->cbStart);
-            }
-            this->cbStart = node::cb_persist(options->Get(start_key));
+        if (options.Has(start_key)) {
+	  this->cbStart.Reset(options.Get(start_key).As<Napi::Function>());
         }
 
-        if (options->Has(finish_key)) {
-            if (this->cbFinish != NULL) {
-                node::cb_destroy(this->cbFinish);
-            }
-            this->cbFinish = node::cb_persist(options->Get(finish_key));
+        if (options.Has(finish_key)) {
+	  this->cbFinish.Reset(options.Get(finish_key).As<Napi::Function>());
         }
     }
 
     if (valuesIndex >= 0) {
-        v8::Local<v8::Array> values = v8::Array::Cast(*args[valuesIndex]);
-        for (uint32_t i = 0, limiti = values->Length(); i < limiti; i++) {
-            this->values.push_back(v8::Persistent<v8::Value>::New(values->Get(i)));
+        Napi::Array values = args[valuesIndex].As<Napi::Array>();
+        for (uint32_t i = 0, limiti = values.Length(); i < limiti; i++) {
+	  this->values.push_back(Persistent(values.Get(i)));
         }
     }
 
     if (callbackIndex >= 0) {
-        this->cbExecute = node::cb_persist(args[callbackIndex]);
+      this->cbExecute.Reset(args[callbackIndex].As<Napi::Function>());
     }
 
-    return v8::Handle<v8::Value>();
+    return Napi::Value();
 }
 
-std::string node_db::Query::fieldName(v8::Local<v8::Value> value) const throw(node_db::Exception&) {
+std::string node_db::Query::fieldName(const Napi::Env& env, Napi::Value value) const throw(node_db::Exception&) {
     std::string buffer;
 
-    if (value->IsObject()) {
-        v8::Local<v8::Object> valueObject = value->ToObject();
-        v8::Local<v8::Array> valueProperties = valueObject->GetPropertyNames();
-        if (valueProperties->Length() == 0) {
+    if (value.IsObject()) {
+        Napi::Object valueObject = value.ToObject();
+        Napi::Array valueProperties = valueObject.GetPropertyNames();
+        if (valueProperties.Length() == 0) {
             throw node_db::Exception("Non empty objects should be used for value aliasing in select");
         }
 
-        for (uint32_t j = 0, limitj = valueProperties->Length(); j < limitj; j++) {
-            v8::Local<v8::Value> propertyName = valueProperties->Get(j);
-            v8::String::Utf8Value fieldName(propertyName);
+        for (uint32_t j = 0, limitj = valueProperties.Length(); j < limitj; j++) {
+            Napi::Value propertyName = valueProperties.Get(j);
+            Napi::String fieldName(env, propertyName);
 
-            v8::Local<v8::Value> currentValue = valueObject->Get(propertyName);
-            if (currentValue->IsObject() && !currentValue->IsArray() && !currentValue->IsFunction() && !currentValue->IsDate()) {
-                v8::Local<v8::Object> currentObject = currentValue->ToObject();
-                v8::Local<v8::String> escapeKey = v8::String::New("escape");
-                v8::Local<v8::String> valueKey = v8::String::New("value");
-                v8::Local<v8::String> precisionKey = v8::String::New("precision");
-                v8::Local<v8::Value> optionValue;
+            Napi::Value currentValue = valueObject.Get(propertyName);
+            if (currentValue.IsObject() && !currentValue.IsArray() && !currentValue.IsFunction()) {
+                Napi::Object currentObject = currentValue.ToObject();
+                Napi::String escapeKey = String::New(env, "escape");
+                Napi::String valueKey = String::New(env, "value");
+                Napi::String precisionKey = String::New(env, "precision");
+                Napi::Value optionValue;
                 bool escape = false;
                 int precision = -1;
 
-                if (!currentObject->Has(valueKey)) {
+                if (!currentObject.Has(valueKey)) {
                     throw node_db::Exception("The \"value\" option for the select field object must be specified");
                 }
 
-                if (currentObject->Has(escapeKey)) {
-                    optionValue = currentObject->Get(escapeKey);
-                    if (!optionValue->IsBoolean()) {
+                if (currentObject.Has(escapeKey)) {
+                    optionValue = currentObject.Get(escapeKey);
+                    if (!optionValue.IsBoolean()) {
                         throw node_db::Exception("Specify a valid boolean value for the \"escape\" option in the select field object");
                     }
-                    escape = optionValue->IsTrue();
+                    escape = optionValue.ToBoolean();
                 }
 
-                if (currentObject->Has(precisionKey)) {
-                    optionValue = currentObject->Get(precisionKey);
-                    if (!optionValue->IsNumber() || optionValue->IntegerValue() < 0) {
+                if (currentObject.Has(precisionKey)) {
+                    optionValue = currentObject.Get(precisionKey);
+                    if (!optionValue.IsNumber() || optionValue.As<Napi::Number>().Int64Value() < 0) {
                         throw new node_db::Exception("Specify a number equal or greater than 0 for precision");
                     }
-                    precision = optionValue->IntegerValue();
+                    precision = optionValue.As<Napi::Number>().Int64Value();
                 }
 
                 if (j > 0) {
                     buffer += ',';
                 }
 
-                buffer += this->value(currentObject->Get(valueKey), false, escape, precision);
+                buffer += this->value(currentObject.Get(valueKey), false, escape, precision);
             } else {
                 if (j > 0) {
                     buffer += ',';
                 }
 
-                buffer += this->value(currentValue, false, currentValue->IsString() ? false : true);
+                buffer += this->value(currentValue, false, currentValue.IsString() ? false : true);
             }
 
             buffer += " AS ";
-            buffer += this->connection->escapeName(*fieldName);
+            buffer += this->connection->escapeName(fieldName);
         }
-    } else if (value->IsString()) {
-        v8::String::Utf8Value fieldName(value->ToString());
-        buffer += this->connection->escapeName(*fieldName);
+    } else if (value.IsString()) {
+        Napi::String fieldName(env, value.ToString());
+        buffer += this->connection->escapeName(fieldName);
     } else {
         throw node_db::Exception("Incorrect value type provided as field for select");
     }
@@ -1167,61 +1183,63 @@ std::string node_db::Query::fieldName(v8::Local<v8::Value> value) const throw(no
     return buffer;
 }
 
-std::string node_db::Query::tableName(v8::Local<v8::Value> value, bool escape) const throw(node_db::Exception&) {
+std::string node_db::Query::tableName(const Napi::Env& env, Napi::Value value, bool escape) const throw(node_db::Exception&) {
     std::string buffer;
 
-    if (value->IsArray()) {
-        v8::Local<v8::Array> tables = v8::Array::Cast(*value);
-        if (tables->Length() == 0) {
+    if (value.IsArray()) {
+        Napi::Array tables = value.As<Napi::Array>();
+        if (tables.Length() == 0) {
             throw node_db::Exception("No tables specified");
         }
 
-        for (uint32_t i = 0, limiti = tables->Length(); i < limiti; i++) {
+        for (uint32_t i = 0, limiti = tables.Length(); i < limiti; i++) {
             if (i > 0) {
                 buffer += ',';
             }
 
-            buffer += this->tableName(tables->Get(i), escape);
+            buffer += this->tableName(env, tables.Get(i), escape);
         }
-    } else if (value->IsObject()) {
-        v8::Local<v8::Object> valueObject = value->ToObject();
-        v8::Local<v8::Array> valueProperties = valueObject->GetPropertyNames();
-        if (valueProperties->Length() == 0) {
+    } else if (value.IsObject()) {
+        Napi::Object valueObject = value.ToObject();
+        Napi::Array valueProperties = valueObject.GetPropertyNames();
+        if (valueProperties.Length() == 0) {
             throw node_db::Exception("Non empty objects should be used for aliasing");
         }
 
-        v8::Local<v8::Value> propertyName = valueProperties->Get(0);
-        v8::Local<v8::Value> propertyValue = valueObject->Get(propertyName);
+        Napi::Value propertyName = valueProperties.Get((uint32_t)0);
+        Napi::Value propertyValue = valueObject.Get(propertyName);
 
-        if (!propertyName->IsString() || !propertyValue->IsString()) {
+        if (!propertyName.IsString() || !propertyValue.IsString()) {
             throw node_db::Exception("Only strings are allowed for table / alias name");
         }
 
-        v8::String::Utf8Value table(propertyValue);
-        v8::String::Utf8Value alias(propertyName);
+        Napi::String table(env, propertyValue);
+        Napi::String alias(env, propertyName);
 
-        buffer += (escape ? this->connection->escapeName(*table) : *table);
+        buffer += (escape ? this->connection->escapeName(table) : table);
         buffer += " AS ";
-        buffer += (escape ? this->connection->escapeName(*alias) : *alias);
+        buffer += (escape ? this->connection->escapeName(alias) : alias);
     } else {
-        v8::String::Utf8Value tables(value->ToString());
+        Napi::String tables(env, value.ToString());
 
-        buffer += (escape ? this->connection->escapeName(*tables) : *tables);
+        buffer += (escape ? this->connection->escapeName(tables) : tables);
     }
 
     return buffer;
 }
 
-v8::Handle<v8::Value> node_db::Query::addCondition(const v8::Arguments& args, const char* separator) {
+Napi::Value node_db::Query::addCondition(const CallbackInfo& args, const char* separator) {
+  Napi::Env env = args.Env();
+
     ARG_CHECK_STRING(0, conditions);
     ARG_CHECK_OPTIONAL_ARRAY(1, values);
 
-    v8::String::Utf8Value conditions(args[0]->ToString());
-    std::string currentConditions = *conditions;
+    Napi::String conditions(env, args[0].ToString());
+    std::string currentConditions = conditions;
     if (args.Length() > 1) {
-        v8::Local<v8::Array> currentValues = v8::Array::Cast(*args[1]);
-        for (uint32_t i = 0, limiti = currentValues->Length(); i < limiti; i++) {
-            this->values.push_back(v8::Persistent<v8::Value>::New(currentValues->Get(i)));
+        Napi::Array currentValues = args[1].As<Napi::Array>();
+        for (uint32_t i = 0, limiti = currentValues.Length(); i < limiti; i++) {
+	  this->values.push_back(Persistent(currentValues.Get(i)));
         }
     }
 
@@ -1231,12 +1249,12 @@ v8::Handle<v8::Value> node_db::Query::addCondition(const v8::Arguments& args, co
     return args.This();
 }
 
-v8::Local<v8::Object> node_db::Query::row(node_db::Result* result, row_t* currentRow) const {
-    v8::Local<v8::Object> row = v8::Object::New();
+Napi::Object node_db::Query::row(const Napi::Env& env, node_db::Result* result, row_t* currentRow) const {
+    Napi::Object row = Object::New(env);
 
     for (uint16_t j = 0, limitj = result->columnCount(); j < limitj; j++) {
         node_db::Result::Column* currentColumn = result->column(j);
-        v8::Local<v8::Value> value;
+        Napi::Value value;
 
         if (currentRow->columns[j] != NULL) {
             const char* currentValue = currentRow->columns[j];
@@ -1245,19 +1263,21 @@ v8::Local<v8::Object> node_db::Query::row(node_db::Result* result, row_t* curren
                 node_db::Result::Column::type_t columnType = currentColumn->getType();
                 switch (columnType) {
                     case node_db::Result::Column::BOOL:
-                        value = v8::Local<v8::Value>::New(currentValue == NULL || currentLength == 0 || currentValue[0] != '0' ? v8::True() : v8::False());
+		      value = Boolean::New(env, currentValue == NULL || currentLength == 0 || currentValue[0] != '0');
                         break;
                     case node_db::Result::Column::INT:
-                        value = v8::String::New(currentValue, currentLength)->ToInteger();
+		      value = String::New(env, currentValue, currentLength).ToNumber();
                         break;
                     case node_db::Result::Column::NUMBER:
-                        value = v8::String::New(currentValue, currentLength)->ToNumber();
+		      value = String::New(env, currentValue, currentLength).ToNumber();
                         break;
                     case node_db::Result::Column::TIME:
                         {
                             int hour, min, sec;
                             sscanf(currentValue, "%d:%d:%d", &hour, &min, &sec);
-                            value = v8::Date::New(static_cast<uint64_t>((hour*60*60 + min*60 + sec) * 1000));
+			    value = env.Global().Get("Date").As<Napi::Function>().New({
+				Number::New(env, static_cast<uint64_t>((hour*60*60 + min*60 + sec) * 1000))
+				  });
                         }
                         break;
                     case node_db::Result::Column::DATE:
@@ -1307,20 +1327,23 @@ v8::Local<v8::Object> node_db::Query::row(node_db::Result* result, row_t* curren
                             timeinfo.tm_min = min;
                             timeinfo.tm_sec = sec;
 
-                            value = v8::Date::New(static_cast<double>(mktime(&timeinfo) + Query::gmtDelta) * 1000);
+			    value = env.Global().Get("Date").As<Napi::Function>().New({
+				Number::New(env, static_cast<double>(mktime(&timeinfo) + Query::gmtDelta) * 1000)
+				  });
                         } catch(const node_db::Exception&) {
-                            value = v8::String::New(currentValue, currentLength);
+			  value = String::New(env, currentValue, currentLength);
                         }
                         break;
                     case node_db::Result::Column::SET:
                         {
-                            v8::Local<v8::Array> values = v8::Array::New();
+                            Napi::Array values = Array::New(env);
                             std::istringstream stream(currentValue);
                             std::string item;
                             uint64_t index = 0;
+                            std::ostringstream reusableStream;
                             while (std::getline(stream, item, ',')) {
                                 if (!item.empty()) {
-                                    values->Set(v8::Integer::New(index++), v8::String::New(item.c_str()));
+				  values.Set(v8StringFromUInt64(env, index++, reusableStream), String::New(env, item.c_str()));
                                 }
                             }
                             value = values;
@@ -1328,22 +1351,22 @@ v8::Local<v8::Object> node_db::Query::row(node_db::Result* result, row_t* curren
                         break;
                     case node_db::Result::Column::TEXT:
                         if (this->bufferText || currentColumn->isBinary()) {
-                            value = v8::Local<v8::Value>::New(node::Buffer::New(v8::String::New(currentValue, currentLength)));
+			  value = Buffer<char>::Copy(env, currentValue, currentLength);
                         } else {
-                            value = v8::String::New(currentValue, currentLength);
+			  value = String::New(env, currentValue, currentLength);
                         }
                         break;
                     default:
-                        value = v8::String::New(currentValue, currentLength);
+		      value = String::New(env, currentValue, currentLength);
                         break;
                 }
             } else {
-                value = v8::String::New(currentValue, currentLength);
+	      value = String::New(env, currentValue, currentLength);
             }
         } else {
-            value = v8::Local<v8::Value>::New(v8::Null());
+            value = env.Null();
         }
-        row->Set(v8::String::New(currentColumn->getName().c_str()), value);
+        row.Set(String::New(env, currentColumn->getName().c_str()), value);
     }
 
     return row;
@@ -1390,7 +1413,7 @@ std::string node_db::Query::parseQuery() const throw(node_db::Exception&) {
 
     uint32_t index = 0, delta = 0;
     for (std::vector<std::string::size_type>::iterator iterator = positions.begin(), end = positions.end(); iterator != end; ++iterator, index++) {
-        std::string value = this->value(*(this->values[index]));
+      std::string value = this->value(this->values[index].Value());
 
 	if(!value.length()) {
 		throw node_db::Exception("Internal error, attempting to replace with zero length value");
@@ -1403,19 +1426,20 @@ std::string node_db::Query::parseQuery() const throw(node_db::Exception&) {
     return parsed;
 }
 
-std::string node_db::Query::value(v8::Local<v8::Value> value, bool inArray, bool escape, int precision) const throw(node_db::Exception&) {
+std::string node_db::Query::value(Napi::Value value, bool inArray, bool escape, int precision) const throw(node_db::Exception&) {
+  Napi::Env env = value.Env();
     std::ostringstream currentStream;
 
-    if (value->IsNull()) {
+    if (value.IsNull()) {
         currentStream << "NULL";
-    } else if (value->IsArray()) {
-        v8::Local<v8::Array> array = v8::Array::Cast(*value);
+    } else if (value.IsArray()) {
+        Napi::Array array = value.As<Napi::Array>();
         if (!inArray) {
             currentStream << '(';
         }
-        for (uint32_t i = 0, limiti = array->Length(); i < limiti; i++) {
-            v8::Local<v8::Value> child = array->Get(i);
-            if (child->IsArray() && i > 0) {
+        for (uint32_t i = 0, limiti = array.Length(); i < limiti; i++) {
+            Napi::Value child = array.Get(i);
+            if (child.IsArray() && i > 0) {
                 currentStream << "),(";
             } else if (i > 0) {
                 currentStream << ',';
@@ -1426,41 +1450,42 @@ std::string node_db::Query::value(v8::Local<v8::Value> value, bool inArray, bool
         if (!inArray) {
             currentStream << ')';
         }
-    } else if (value->IsDate()) {
-        currentStream << this->connection->quoteString << this->fromDate(v8::Date::Cast(*value)->NumberValue()) << this->connection->quoteString;
-    } else if (value->IsObject()) {
-        v8::Local<v8::Object> object = value->ToObject();
-        v8::Handle<v8::String> valueKey = v8::String::New("value");
-        v8::Handle<v8::String> escapeKey = v8::String::New("escape");
+    } else if (value.IsObject()) {
+      if (value.ToObject().InstanceOf(env.Global().Get("Date").As<Napi::Function>())) {
+        currentStream << this->connection->quoteString << this->fromDate(value.ToNumber().DoubleValue()) << this->connection->quoteString;
+      } else {
+        Napi::Object object = value.ToObject();
+        String valueKey = String::New(env, "value");
+        String escapeKey = String::New(env, "escape");
 
-        if (object->Has(valueKey)) {
-            v8::Handle<v8::String> precisionKey = v8::String::New("precision");
+        if (object.Has(valueKey)) {
+	  String precisionKey = String::New(env, "precision");
             int precision = -1;
 
-            if (object->Has(precisionKey)) {
-                v8::Local<v8::Value> optionValue = object->Get(precisionKey);
-                if (!optionValue->IsNumber() || optionValue->IntegerValue() < 0) {
+            if (object.Has(precisionKey)) {
+                Napi::Value optionValue = object.Get(precisionKey);
+                if (!optionValue.IsNumber() || optionValue.As<Napi::Number>().Int64Value() < 0) {
                     throw new node_db::Exception("Specify a number equal or greater than 0 for precision");
                 }
-                precision = optionValue->IntegerValue();
+                precision = optionValue.As<Napi::Number>().Int64Value();
             }
 
             bool innerEscape = true;
-            if (object->Has(escapeKey)) {
-                v8::Local<v8::Value> escapeValue = object->Get(escapeKey);
-                if (!escapeValue->IsBoolean()) {
+            if (object.Has(escapeKey)) {
+                Napi::Value escapeValue = object.Get(escapeKey);
+                if (!escapeValue.IsBoolean()) {
                     throw node_db::Exception("Specify a valid boolean value for the \"escape\" option in the select field object");
                 }
-                innerEscape = escapeValue->IsTrue();
+                innerEscape = escapeValue.ToBoolean();
             }
-            currentStream << this->value(object->Get(valueKey), false, innerEscape, precision);
+            currentStream << this->value(object.Get(valueKey), false, innerEscape, precision);
         } else {
-            v8::Handle<v8::String> sqlKey = v8::String::New("sql");
-            if (!object->Has(sqlKey) || !object->Get(sqlKey)->IsFunction()) {
+	  String sqlKey = String::New(env, "sql");
+            if (!object.Has(sqlKey) || !object.Get(sqlKey).IsFunction()) {
                 throw node_db::Exception("Objects can't be converted to a SQL value");
             }
 
-            node_db::Query *query = node::ObjectWrap::Unwrap<node_db::Query>(object);
+	    node_db::Query* query = reinterpret_cast<node_db::Query*>(Unwrap(object));
             assert(query);
             if (escape) {
                 currentStream << "(";
@@ -1470,20 +1495,21 @@ std::string node_db::Query::value(v8::Local<v8::Value> value, bool inArray, bool
                 currentStream << ")";
             }
         }
-    } else if (value->IsBoolean()) {
-        currentStream << (value->IsTrue() ? '1' : '0');
-    } else if (value->IsUint32() || value->IsInt32() || (value->IsNumber() && value->NumberValue() == value->IntegerValue())) {
-        currentStream << value->IntegerValue();
-    } else if (value->IsNumber()) {
+      }
+    } else if (value.IsBoolean()) {
+        currentStream << (value.ToBoolean() ? '1' : '0');
+    } else if (value.IsNumber() && value.As<Napi::Number>().DoubleValue() == value.As<Napi::Number>().Int64Value()) {
+        currentStream << value.As<Napi::Number>().Int64Value();
+    } else if (value.IsNumber()) {
         if (precision == -1) {
-            v8::String::Utf8Value currentString(value->ToString());
-            currentStream << *currentString;
+            Napi::String currentString(env, value.ToString());
+            currentStream << currentString;
         } else {
-            currentStream << std::fixed << std::setprecision(precision) << value->NumberValue();
+            currentStream << std::fixed << std::setprecision(precision) << value.As<Napi::Number>().DoubleValue();
         }
-    } else if (value->IsString()) {
-        v8::String::Utf8Value currentString(value->ToString());
-        std::string string = *currentString;
+    } else if (value.IsString()) {
+        Napi::String currentString(env, value.ToString());
+        std::string string = currentString;
         if (escape) {
             try {
                 currentStream << this->connection->quoteString << this->connection->escape(string) << this->connection->quoteString;
@@ -1494,8 +1520,8 @@ std::string node_db::Query::value(v8::Local<v8::Value> value, bool inArray, bool
             currentStream << string;
         }
     } else {
-        v8::String::Utf8Value currentString(value->ToString());
-        std::string string = *currentString;
+        Napi::String currentString(env, value.ToString());
+        std::string string = currentString;
         throw node_db::Exception("Unknown type for to convert to SQL, converting `" + string + "'");
     }
 

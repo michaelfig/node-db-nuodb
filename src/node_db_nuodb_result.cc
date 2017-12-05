@@ -227,7 +227,7 @@ char** node_db_nuodb::Result::row(unsigned long* rowColumnLengths) throw(node_db
                 string = this->resultSet->getString(c + 1);
             //}
 
-            rowColumnLengths[c] = string.length();
+            rowColumnLengths[c] = string.Length();
             row[c] = new char[rowColumnLengths[c]];
             if (row[c] == NULL) {
                 throw node_db::Exception("Could not allocate buffer for row column");

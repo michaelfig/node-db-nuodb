@@ -35,7 +35,7 @@
 namespace node_db_nuodb {
 class Query : public node_db::Query {
     public:
-        static v8::Persistent<v8::FunctionTemplate> constructorTemplate;
+        static v8::Persistent<Napi::FunctionReference> constructorTemplate;
         static void Init(v8::Handle<v8::Object> target);
 
     protected:

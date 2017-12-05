@@ -30,7 +30,7 @@
 #include "./node_db_nuodb_connection.h"
 #include "./node_db_nuodb_query.h"
 
-v8::Persistent<v8::FunctionTemplate> node_db_nuodb::NuoDB::constructorTemplate;
+v8::Persistent<Napi::FunctionReference> node_db_nuodb::NuoDB::constructorTemplate;
 
 node_db_nuodb::NuoDB::NuoDB(): node_db::Binding() {
     this->connection = new node_db_nuodb::Connection();
@@ -46,14 +46,11 @@ node_db_nuodb::NuoDB::~NuoDB() {
 void node_db_nuodb::NuoDB::Init(v8::Handle<v8::Object> target) {
     v8::HandleScope scope;
 
-    v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(New);
+    Napi::FunctionReference t = Napi::FunctionReference::New(New);
 
-    constructorTemplate = v8::Persistent<v8::FunctionTemplate>::New(t);
-    constructorTemplate->InstanceTemplate()->SetInternalFieldCount(1);
+    node_db::Binding::Init(target, t);
 
-    node_db::Binding::Init(target, constructorTemplate);
-
-    target->Set(v8::String::NewSymbol("NuoDB"), constructorTemplate->GetFunction());
+    target.Set("NuoDB", t);
 }
 
 v8::Handle<v8::Value> node_db_nuodb::NuoDB::New(const v8::Arguments& args) {
@@ -78,7 +75,7 @@ v8::Handle<v8::Value> node_db_nuodb::NuoDB::New(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
-v8::Handle<v8::Value> node_db_nuodb::NuoDB::set(const v8::Local<v8::Object> options) {
+v8::Handle<v8::Value> node_db_nuodb::NuoDB::set(const Napi::Object options) {
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, hostname);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, schema);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, user);
@@ -88,11 +85,11 @@ v8::Handle<v8::Value> node_db_nuodb::NuoDB::set(const v8::Local<v8::Object> opti
 
     node_db_nuodb::Connection* connection = static_cast<node_db_nuodb::Connection*>(this->connection);
 
-    v8::String::Utf8Value hostname(options->Get(hostname_key)->ToString());
-    v8::String::Utf8Value user(options->Get(user_key)->ToString());
-    v8::String::Utf8Value password(options->Get(password_key)->ToString());
-    v8::String::Utf8Value database(options->Get(database_key)->ToString());
-    v8::String::Utf8Value schema(options->Get(schema_key)->ToString());
+    Napi::String hostname(env, options->Get(hostname_key)->ToString());
+    Napi::String user(env, options->Get(user_key)->ToString());
+    Napi::String password(env, options->Get(password_key)->ToString());
+    Napi::String database(env, options->Get(database_key)->ToString());
+    Napi::String schema(env, options->Get(schema_key)->ToString());
 
     if (options->Has(hostname_key)) {
         connection->setHostname(*hostname);
