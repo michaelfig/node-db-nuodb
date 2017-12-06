@@ -33,18 +33,19 @@
 #include "../lib/node-db/binding.h"
 
 namespace node_db_nuodb {
+  using namespace Napi;
     class NuoDB : public node_db::Binding {
         public:
-            static void Init(v8::Handle<v8::Object> target);
+            static void Init(Object target);
 
         protected:
-            NuoDB();
+            NuoDB(const CallbackInfo& args);
             ~NuoDB();
 
-            static v8::Persistent<Napi::FunctionReference> constructorTemplate;
-            static v8::Handle<v8::Value> New(const v8::Arguments& args);
-            v8::Handle<v8::Value> set(const Napi::Object options);
-            v8::Persistent<v8::Object> createQuery() const;
+            static Napi::FunctionReference constructorTemplate;
+            static Napi::Value New(const CallbackInfo& args);
+	    Napi::Value set(const Napi::Object options);
+            ObjectReference createQuery() const;
     };
 }
 

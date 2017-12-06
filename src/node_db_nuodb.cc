@@ -30,10 +30,10 @@
 #include "./node_db_nuodb_connection.h"
 #include "./node_db_nuodb_query.h"
 
-v8::Persistent<Napi::FunctionReference> node_db_nuodb::NuoDB::constructorTemplate;
+Napi::FunctionReference node_db_nuodb::NuoDB::constructorTemplate;
 
-node_db_nuodb::NuoDB::NuoDB(): node_db::Binding() {
-    this->connection = new node_db_nuodb::Connection();
+node_db_nuodb::NuoDB::NuoDB(const CallbackInfo& info): node_db::Binding(info) {
+    this->connection = new node_db_nuodb::Connection(info);
     assert(this->connection);
 }
 
@@ -43,20 +43,23 @@ node_db_nuodb::NuoDB::~NuoDB() {
     }
 }
 
-void node_db_nuodb::NuoDB::Init(v8::Handle<v8::Object> target) {
-    v8::HandleScope scope;
+void node_db_nuodb::NuoDB::Init(Napi::Object target) {
+  Napi::Env env = target.Env();
+  HandleScope scope(env);
 
-    Napi::FunctionReference t = Napi::FunctionReference::New(New);
-
+  FunctionReference t;
+  t.Reset(Napi::Function::New(env, New));
+  
     node_db::Binding::Init(target, t);
 
-    target.Set("NuoDB", t);
+    target.Set("NuoDB", t.Value());
 }
 
-v8::Handle<v8::Value> node_db_nuodb::NuoDB::New(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db_nuodb::NuoDB::New(const CallbackInfo& args) {
+  Napi::Env env = args.Env();
+  EscapableHandleScope scope(env);
 
-    node_db_nuodb::NuoDB* binding = new node_db_nuodb::NuoDB();
+    node_db_nuodb::NuoDB* binding = new node_db_nuodb::NuoDB(args);
     if (binding == NULL) {
         THROW_EXCEPTION("Can't create environment object")
     }
@@ -64,18 +67,19 @@ v8::Handle<v8::Value> node_db_nuodb::NuoDB::New(const v8::Arguments& args) {
     if (args.Length() > 0) {
         ARG_CHECK_OBJECT(0, options);
 
-        v8::Handle<v8::Value> set = binding->set(args[0]->ToObject());
+	Napi::Value set = binding->set(args[0].ToObject());
         if (!set.IsEmpty()) {
-            return scope.Close(set);
+            return scope.Escape(set);
         }
     }
 
-    binding->Wrap(args.This());
+    binding->Reset(args.This().As<Object>());
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db_nuodb::NuoDB::set(const Napi::Object options) {
+Napi::Value node_db_nuodb::NuoDB::set(const Napi::Object options) {
+  Napi::Env env = options.Env();
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, hostname);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, schema);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, user);
@@ -85,41 +89,41 @@ v8::Handle<v8::Value> node_db_nuodb::NuoDB::set(const Napi::Object options) {
 
     node_db_nuodb::Connection* connection = static_cast<node_db_nuodb::Connection*>(this->connection);
 
-    Napi::String hostname(env, options->Get(hostname_key)->ToString());
-    Napi::String user(env, options->Get(user_key)->ToString());
-    Napi::String password(env, options->Get(password_key)->ToString());
-    Napi::String database(env, options->Get(database_key)->ToString());
-    Napi::String schema(env, options->Get(schema_key)->ToString());
+    Napi::String hostname(env, options.Get(hostname_key).ToString());
+    Napi::String user(env, options.Get(user_key).ToString());
+    Napi::String password(env, options.Get(password_key).ToString());
+    Napi::String database(env, options.Get(database_key).ToString());
+    Napi::String schema(env, options.Get(schema_key).ToString());
 
-    if (options->Has(hostname_key)) {
-        connection->setHostname(*hostname);
+    if (options.Has(hostname_key)) {
+        connection->setHostname(hostname);
     }
 
-    if (options->Has(user_key)) {
-        connection->setUser(*user);
+    if (options.Has(user_key)) {
+        connection->setUser(user);
     }
 
-    if (options->Has(password_key)) {
-        connection->setPassword(*password);
+    if (options.Has(password_key)) {
+        connection->setPassword(password);
     }
 
-    if (options->Has(database_key)) {
-        connection->setDatabase(*database);
+    if (options.Has(database_key)) {
+        connection->setDatabase(database);
     }
 
-    if (options->Has(schema_key)) {
-        connection->setSchema(*schema);
+    if (options.Has(schema_key)) {
+        connection->setSchema(schema);
     }
 
-    if (options->Has(port_key)) {
-        connection->setPort(options->Get(port_key)->ToInt32()->Value());
+    if (options.Has(port_key)) {
+        connection->setPort(options.Get(port_key).ToNumber().Int32Value());
     }
 
-    return v8::Handle<v8::Value>();
+    return Napi::Value();
 }
 
-v8::Persistent<v8::Object> node_db_nuodb::NuoDB::createQuery() const {
-    v8::Persistent<v8::Object> query(
-        node_db_nuodb::Query::constructorTemplate->GetFunction()->NewInstance());
-    return query;
+ObjectReference node_db_nuodb::NuoDB::createQuery() const {
+  ObjectReference query;
+  query.Reset(node_db_nuodb::Query::constructorTemplate.Value().New({}));
+  return query;
 }

@@ -30,13 +30,11 @@
 #include "./node_db_nuodb.h"
 #include "./node_db_nuodb_query.h"
 
-extern "C" {
-  void init(v8::Handle<v8::Object> exports) {
-    node_db::EventEmitter::Init();
-    node_db_nuodb::NuoDB::Init(exports);
-    node_db_nuodb::Query::Init(exports);
-  }
-
-  NODE_API_MODULE(nuodb_bindings, init)
-
+Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  node_db::EventEmitter::Init();
+  node_db_nuodb::NuoDB::Init(exports);
+  node_db_nuodb::Query::Init(exports);
+  return exports;
 }
+
+NODE_API_MODULE(nuodb_bindings, Init)

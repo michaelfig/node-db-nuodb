@@ -35,12 +35,12 @@
 namespace node_db_nuodb {
 class Query : public node_db::Query {
     public:
-        static v8::Persistent<Napi::FunctionReference> constructorTemplate;
-        static void Init(v8::Handle<v8::Object> target);
+        static Napi::FunctionReference constructorTemplate;
+        static void Init(Napi::Object target);
 
     protected:
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Limit(const v8::Arguments& args);
+        static Napi::Value New(const CallbackInfo& args);
+        static Napi::Value Limit(const CallbackInfo& args);
 };
 }
 

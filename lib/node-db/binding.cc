@@ -11,7 +11,7 @@ node_db::Binding::~Binding() {
 
 uv_async_t node_db::Binding::g_async;
 
-void node_db::Binding::Init(Object target, FunctionReference constructorTemplate) {
+void node_db::Binding::Init(Object target, FunctionReference &constructorTemplate) {
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_STRING, node_db::Result::Column::STRING);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_BOOL, node_db::Result::Column::BOOL);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_INT, node_db::Result::Column::INT);
