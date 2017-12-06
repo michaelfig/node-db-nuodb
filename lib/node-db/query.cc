@@ -15,7 +15,7 @@ Napi::String v8StringFromUInt64(const Napi::Env &env, uint64_t num, std::ostring
     return String::New(env, reusableStream.str().c_str());
 }
 
-void node_db::Query::Init(Object target, Napi::FunctionReference constructorTemplate) {
+void node_db::Query::Init(Object target, Napi::FunctionReference &constructorTemplate) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select", Select);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from", From);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join", Join);

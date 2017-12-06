@@ -36,7 +36,7 @@
 namespace node_db_nuodb {
     class Connection : public node_db::Connection {
         public:
-            Connection(const CallbackInfo& args);
+            Connection();
             ~Connection();
             bool isAlive(bool ping) throw();
             void open() throw(node_db::Exception&);

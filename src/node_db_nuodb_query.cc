@@ -27,46 +27,48 @@
  ****************************************************************************/
 
 #include "./node_db_nuodb_query.h"
+using namespace Napi;
 
-v8::Persistent<Napi::FunctionReference> node_db_nuodb::Query::constructorTemplate;
+Napi::FunctionReference node_db_nuodb::Query::constructorTemplate;
 
-void node_db_nuodb::Query::Init(v8::Handle<v8::Object> target) {
-    v8::HandleScope scope;
+void node_db_nuodb::Query::Init(Napi::Object target) {
+    Napi::Env env = target.Env();
+    HandleScope scope(env);
 
-    Napi::FunctionReference t = Napi::FunctionReference::New(New);
+    Napi::FunctionReference t;
+    t.Reset(Napi::Function::New(env, New));
 
-    constructorTemplate = v8::Persistent<Napi::FunctionReference>::New(t);
+    node_db::Query::Init(target, t);
 
+    NODE_ADD_PROTOTYPE_METHOD(t, "limit", Limit);
 
-    node_db::Query::Init(target, constructorTemplate);
-
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
-
-    target.Set(v8::String::NewSymbol("Query"), constructorTemplate->GetFunction());
+    target.Set("Query", t.Value());
 }
 
-v8::Handle<v8::Value> node_db_nuodb::Query::New(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db_nuodb::Query::New(const CallbackInfo& args) {
+    Napi::Env env = args.Env();
+    EscapableHandleScope scope(env);
 
-    node_db_nuodb::Query* query = new node_db_nuodb::Query();
+    node_db_nuodb::Query* query = new node_db_nuodb::Query(args);
     if (query == NULL) {
         THROW_EXCEPTION("Can't create query object")
     }
 
     if (args.Length() > 0) {
-        v8::Handle<v8::Value> set = query->set(args);
+        Napi::Value set = query->set(args);
         if (!set.IsEmpty()) {
-            return scope.Close(set);
+            return scope.Escape(set);
         }
     }
 
-    query->Wrap(args.This());
+    query->Reset(args.This().As<Object>());
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }
 
-v8::Handle<v8::Value> node_db_nuodb::Query::Limit(const v8::Arguments& args) {
-    v8::HandleScope scope;
+Napi::Value node_db_nuodb::Query::Limit(const CallbackInfo& args) {
+    Napi::Env env = args.Env();
+    EscapableHandleScope scope(env);
 
     if (args.Length() > 1) {
         ARG_CHECK_UINT32(0, offset);
@@ -75,7 +77,7 @@ v8::Handle<v8::Value> node_db_nuodb::Query::Limit(const v8::Arguments& args) {
         ARG_CHECK_UINT32(0, rows);
     }
 
-    node_db_nuodb::Query *query = node::ObjectWrap::Unwrap<node_db_nuodb::Query>(args.This());
+    node_db_nuodb::Query* query = reinterpret_cast<node_db_nuodb::Query*>(Unwrap(args.This().As<Object>()));
     assert(query);
 
     std::string currentSql = query->sql.str();
@@ -83,9 +85,9 @@ v8::Handle<v8::Value> node_db_nuodb::Query::Limit(const v8::Arguments& args) {
     query->sql.str("");
     query->sql.clear();
 
-    uint32_t offset = args[0]->ToInt32()->Value(), rows = 0;
+    uint32_t offset = args[0].ToNumber().Int32Value(), rows = 0;
     if (args.Length() > 1) {
-        rows = args[1]->ToInt32()->Value();
+      rows = args[1].ToNumber().Int32Value();
     }
 
     query->sql << "SELECT * FROM (" << currentSql << ") OFFSET " << offset << " ROWS";
@@ -93,5 +95,5 @@ v8::Handle<v8::Value> node_db_nuodb::Query::Limit(const v8::Arguments& args) {
         query->sql << " FETCH NEXT " << rows << " ROWS ONLY ";
     }
 
-    return scope.Close(args.This());
+    return scope.Escape(args.This());
 }

@@ -39,6 +39,7 @@ class Query : public node_db::Query {
         static void Init(Napi::Object target);
 
     protected:
+        Query(const CallbackInfo& args) : node_db::Query(args) {}
         static Napi::Value New(const CallbackInfo& args);
         static Napi::Value Limit(const CallbackInfo& args);
 };

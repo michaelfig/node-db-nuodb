@@ -22,7 +22,7 @@ using namespace Napi;
 namespace node_db {
 class Query : public EventEmitter {
     public:
-        static void Init(Object target, Napi::FunctionReference constructorTemplate);
+        static void Init(Object target, Napi::FunctionReference &constructorTemplate);
         void setConnection(Connection* connection);
 	Napi::Value set(const CallbackInfo& args);
 

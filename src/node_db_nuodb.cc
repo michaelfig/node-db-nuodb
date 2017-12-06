@@ -33,7 +33,7 @@
 Napi::FunctionReference node_db_nuodb::NuoDB::constructorTemplate;
 
 node_db_nuodb::NuoDB::NuoDB(const CallbackInfo& info): node_db::Binding(info) {
-    this->connection = new node_db_nuodb::Connection(info);
+    this->connection = new node_db_nuodb::Connection();
     assert(this->connection);
 }
 
