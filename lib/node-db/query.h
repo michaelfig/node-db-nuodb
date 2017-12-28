@@ -44,7 +44,7 @@ class Query : public EventEmitter {
         };
         Connection* connection;
         std::ostringstream sql;
-        std::vector< Reference<Napi::Value> > values;
+	Reference<Napi::Array> values;
         bool async;
         bool cast;
         bool bufferText;

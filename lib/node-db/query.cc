@@ -17,12 +17,11 @@ Napi::String v8StringFromUInt64(const Napi::Env &env, uint64_t num, std::ostring
 
 node_db::Query::Query(const CallbackInfo& args):
   connection(NULL), async(true), cast(true), bufferText(false) {
+  values.Reset(Array::New(args.Env()), 1);
 }
 
 node_db::Query::~Query() {
-  for (std::vector< Reference<Napi::Value> >::iterator iterator = this->values.begin(), end = this->values.end(); iterator != end; ++iterator) {
-        iterator->Reset();
-    }
+    values.Reset();
 }
 
 void node_db::Query::setConnection(node_db::Connection* connection) {
@@ -166,7 +165,7 @@ Napi::Value node_db::Query::Join(const CallbackInfo& args) {
         if (args.Length() > 1) {
             Napi::Array currentValues = args[1].As<Napi::Array>();
             for (uint32_t i = 0, limiti = currentValues.Length(); i < limiti; i++) {
-	      query->values.push_back(Persistent(currentValues.Get(i)));
+	      query->values.Value().Set(query->values.Value().Length(), currentValues.Get(i));
             }
         }
 
@@ -1086,7 +1085,7 @@ Napi::Value node_db::Query::set(const CallbackInfo& args) {
     if (valuesIndex >= 0) {
         Napi::Array values = args[valuesIndex].As<Napi::Array>();
         for (uint32_t i = 0, limiti = values.Length(); i < limiti; i++) {
-	  this->values.push_back(Persistent(values.Get(i)));
+	  this->values.Value().Set(this->values.Value().Length(), values.Get(i));
         }
     }
 
@@ -1223,7 +1222,7 @@ Napi::Value node_db::Query::addCondition(const CallbackInfo& args, const char* s
     if (args.Length() > 1) {
         Napi::Array currentValues = args[1].As<Napi::Array>();
         for (uint32_t i = 0, limiti = currentValues.Length(); i < limiti; i++) {
-	  this->values.push_back(Persistent(currentValues.Get(i)));
+	  this->values.Value().Set(this->values.Value().Length(), currentValues.Get(i));
         }
     }
 
@@ -1384,7 +1383,7 @@ std::vector<std::string::size_type> node_db::Query::placeholders(std::string* pa
         }
     }
 
-    if (positions.size() != this->values.size()) {
+    if (positions.size() != this->values.Value().Length()) {
         throw node_db::Exception("Wrong number of values to escape");
     }
 
@@ -1397,7 +1396,7 @@ std::string node_db::Query::parseQuery() const throw(node_db::Exception&) {
 
     uint32_t index = 0, delta = 0;
     for (std::vector<std::string::size_type>::iterator iterator = positions.begin(), end = positions.end(); iterator != end; ++iterator, index++) {
-      std::string value = this->value(this->values[index].Value());
+      std::string value = this->value(this->values.Value()[index]);
 
 	if(!value.length()) {
 		throw node_db::Exception("Internal error, attempting to replace with zero length value");
