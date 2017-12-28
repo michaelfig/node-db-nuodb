@@ -17,6 +17,7 @@ for(var test in tests) {
 }
 
 delete exports["Client"]["escape()"];
+delete exports["Client"]["multiple results"];
 delete exports["Query"]["insert()"];
 delete exports["Query"]["where()"];
 delete exports["Query"]["limit()"];

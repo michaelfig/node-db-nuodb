@@ -33,15 +33,20 @@
 #include "../lib/node-db/query.h"
 
 namespace node_db_nuodb {
-class Query : public node_db::Query {
+  using namespace Napi;
+  class Query : public node_db::Query, public ObjectWrap<Query> {
     public:
         static Napi::FunctionReference constructorTemplate;
         static void Init(Napi::Object target);
 
+	Napi::Object Value() { return this->ObjectWrap<Query>::Value(); }
+	Napi::Env Env() { return this->ObjectWrap<Query>::Env(); }
+	void Ref() { this->ObjectWrap<Query>::Ref(); }
+	void Unref() { this->ObjectWrap<Query>::Unref(); }
+
+        Query(const CallbackInfo& args);
     protected:
-        Query(const CallbackInfo& args) : node_db::Query(args) {}
-        static Napi::Value New(const CallbackInfo& args);
-        static Napi::Value Limit(const CallbackInfo& args);
+        Napi::Value Limit(const CallbackInfo& args);
 };
 }
 

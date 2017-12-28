@@ -34,16 +34,20 @@
 
 namespace node_db_nuodb {
   using namespace Napi;
-    class NuoDB : public node_db::Binding {
+  class NuoDB : public node_db::Binding, public ObjectWrap<NuoDB> {
         public:
             static void Init(Object target);
+	    Napi::Object Value() { return this->ObjectWrap<NuoDB>::Value(); }
+	    Napi::Env Env() { return this->ObjectWrap<NuoDB>::Env(); }
+	    void Ref() { this->ObjectWrap<NuoDB>::Ref(); }
+	    void Unref() { this->ObjectWrap<NuoDB>::Unref(); }
 
-        protected:
             NuoDB(const CallbackInfo& args);
             ~NuoDB();
 
+        protected:
+
             static Napi::FunctionReference constructorTemplate;
-            static Napi::Value New(const CallbackInfo& args);
 	    Napi::Value set(const Napi::Object options);
             ObjectReference createQuery() const;
     };

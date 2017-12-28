@@ -32,11 +32,6 @@
 
 Napi::FunctionReference node_db_nuodb::NuoDB::constructorTemplate;
 
-node_db_nuodb::NuoDB::NuoDB(const CallbackInfo& info): node_db::Binding(info) {
-    this->connection = new node_db_nuodb::Connection();
-    assert(this->connection);
-}
-
 node_db_nuodb::NuoDB::~NuoDB() {
     if (this->connection != NULL) {
         delete this->connection;
@@ -46,40 +41,35 @@ node_db_nuodb::NuoDB::~NuoDB() {
 void node_db_nuodb::NuoDB::Init(Napi::Object target) {
   Napi::Env env = target.Env();
   HandleScope scope(env);
-
-  FunctionReference t;
-  t.Reset(Napi::Function::New(env, New));
-  
-    node_db::Binding::Init(target, t);
-
-    target.Set("NuoDB", t.Value());
+  Napi::Function constructor = DefineClass(env, "NuoDB", {
+#define XM(namestr, callback) \
+      InstanceMethod(namestr, &node_db_nuodb::NuoDB::callback)
+#define XC(name, intval) \
+      StaticValue(#name, Napi::Number::New(env, intval))
+      BINDING_PROPS
+#undef XC
+#undef XM
+    });
+  constructorTemplate.Reset(constructor);
+  target.Set("NuoDB", constructor);
 }
 
-Napi::Value node_db_nuodb::NuoDB::New(const CallbackInfo& args) {
-  Napi::Env env = args.Env();
-  EscapableHandleScope scope(env);
+node_db_nuodb::NuoDB::NuoDB(const CallbackInfo& args) :
+  node_db::Binding(args), ObjectWrap<NuoDB>(args) {
+    Napi::Env env = args.Env();
+    HandleScope scope(env);
 
-    node_db_nuodb::NuoDB* binding = new node_db_nuodb::NuoDB(args);
-    if (binding == NULL) {
-        THROW_EXCEPTION("Can't create environment object")
-    }
+    this->connection = new node_db_nuodb::Connection();
+    assert(this->connection);
 
     if (args.Length() > 0) {
         ARG_CHECK_OBJECT(0, options);
-
-	Napi::Value set = binding->set(args[0].ToObject());
-        if (!set.IsEmpty()) {
-            return scope.Escape(set);
-        }
+	this->set(args[0].ToObject());
     }
-
-    binding->Reset(args.This().As<Object>());
-
-    return scope.Escape(args.This());
 }
 
 Napi::Value node_db_nuodb::NuoDB::set(const Napi::Object options) {
-  Napi::Env env = options.Env();
+    Napi::Env env = options.Env();
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, hostname);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, schema);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, user);

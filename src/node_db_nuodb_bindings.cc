@@ -31,7 +31,6 @@
 #include "./node_db_nuodb_query.h"
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  node_db::EventEmitter::Init();
   node_db_nuodb::NuoDB::Init(exports);
   node_db_nuodb::Query::Init(exports);
   return exports;
